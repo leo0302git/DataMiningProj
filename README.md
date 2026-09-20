@@ -19,6 +19,8 @@ Course project for interpretable data mining (2026 Fall).
 
 ```bash
 uv sync
+python download_data.py
 ```
 
-The data files are downloaded locally during repository bootstrap and intentionally excluded from Git.
+The downloader fetches the official UCI source archives and validates the files
+required by this assignment. All data files are intentionally excluded from Git.
