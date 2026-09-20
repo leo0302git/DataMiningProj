@@ -1,26 +1,25 @@
-# DataMiningProj
+# DM
 
-Course project for interpretable data mining (2026 Fall).
+2026 年秋季数据挖掘课程大作业：在两个表格数据集上比较可解释模型与基线模型。
 
-## Scope
+## 项目范围
 
-- DIA: binary classification using RDKit numerical descriptors; SMILES is retained only as an identifier and is not a model feature.
-- Abalone: regression with `Rings` as the target.
-- Models: RRL, a linear baseline, a tree-ensemble baseline, and a manually implemented generalized linear model.
+- DIA：使用 RDKit 数值描述符进行二分类；`SMILES` 仅作为标识，不参与建模。
+- Abalone：以 `Rings` 为回归目标。
+- 模型：RRL、线性模型、树集成模型与手写广义线性模型。
 
-## Repository layout
+## 目录说明
 
-- `data/`: local UCI source files and processed data; not committed.
-- `models/rrl/`: a fixed local copy of upstream RRL. See `UPSTREAM.md` in that directory.
-- `models/linear/`, `models/tree_ensemble/`, `models/manual_glm/`: comparison-model implementations.
-- `prepare_data.py`, `evaluate.py`, `run_experiments.py`: project pipeline entry points (to be implemented incrementally).
+- `data/`：本地 UCI 原始数据与处理后数据，不提交到 Git。
+- `models/rrl/`：固定版本的上游 RRL 副本，来源见其中的 `UPSTREAM.md`。
+- `models/linear/`、`models/tree_ensemble/`、`models/manual_glm/`：独立对比模型。
+- `download_data.py`：下载并校验课程所需的官方原始数据。
 
-## Setup
+## 初始化
 
 ```bash
 uv sync
 python download_data.py
 ```
 
-The downloader fetches the official UCI source archives and validates the files
-required by this assignment. All data files are intentionally excluded from Git.
+下载脚本只获取 UCI 官方包并校验必需文件。数据、日志、模型权重和实验结果均不提交到 Git。
