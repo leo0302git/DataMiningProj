@@ -1,0 +1,21 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local data and generated experiment artifacts
+data/raw/**
+data/processed/**
+!data/.gitkeep
+models/rrl/dataset/**
+!models/rrl/dataset/README.md
+models/rrl/log_folder/
+models/rrl/**/*.pth
+results/**
+!results/.gitkeep
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
