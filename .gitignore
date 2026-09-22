@@ -4,15 +4,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Large generated experiment artifacts
-data/processed/**
-!data/.gitkeep
+# Large training artifacts
 models/rrl/log_folder/
 models/rrl/**/*.pth
-results/**
-!results/.gitkeep
-!results/eda/
-!results/eda/**
 
 # OS/editor files
 .DS_Store
