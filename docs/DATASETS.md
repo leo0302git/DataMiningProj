@@ -1,6 +1,6 @@
 # 数据来源
 
-本地数据不提交到 Git；通过 `download_data.py` 从下列 UCI 官方数据包下载。
+当前使用的原始数据纳入 Git，也可通过 `download_data.py` 从下列 UCI 官方数据包重新下载并校验。
 
 ## Drug Induced Autoimmunity Prediction
 

@@ -10,7 +10,9 @@
 
 ## 目录说明
 
-- `data/`：本地 UCI 原始数据与处理后数据，不提交到 Git。
+- `data/raw/`：纳入 Git 的 UCI 官方原始数据；大型处理后数据仍忽略。
+- `analysis/`：可复现的数据分析与作图脚本。
+- `results/eda/`：纳入 Git 的 EDA 统计表与精选图片。
 - `models/rrl/`：固定版本的上游 RRL 副本，来源见其中的 `UPSTREAM.md`。
 - `models/linear/`、`models/tree_ensemble/`、`models/manual_glm/`：独立对比模型。
 - `download_data.py`：下载并校验课程所需的官方原始数据。
@@ -22,4 +24,4 @@ uv sync
 python download_data.py
 ```
 
-下载脚本只获取 UCI 官方包并校验必需文件。数据、日志、模型权重和实验结果均不提交到 Git。
+仓库已包含当前使用的 UCI 官方原始数据；下载脚本用于缺失时重新获取并校验。脚本、文档、原始数据和精选 EDA 结果纳入 Git，大型处理后数据、训练日志和模型权重仍忽略。
