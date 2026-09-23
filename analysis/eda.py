@@ -35,6 +35,23 @@ def save(fig: plt.Figure, path: Path) -> None:
     plt.close(fig)
 
 
+def observed_type(series: pd.Series) -> str:
+    """Classify a numeric feature by values observed in the current dataset."""
+    if not pd.api.types.is_numeric_dtype(series) or series.isna().any():
+        return "other"
+    values = series.to_numpy()
+    if not np.isfinite(values).all():
+        return "other"
+    unique = set(values)
+    if len(unique) == 1:
+        return "constant"
+    if unique == {0, 1}:
+        return "binary_0_1"
+    if np.equal(values, np.floor(values)).all():
+        return "integer"
+    return "float"
+
+
 def feature_summary(
     frame: pd.DataFrame,
     numeric_columns: list[str],
@@ -45,9 +62,11 @@ def feature_summary(
     summary = numeric.describe(percentiles=[0.25, 0.5, 0.75]).T.rename(
         columns={"25%": "q1", "50%": "median", "75%": "q3"}
     )
+    summary.insert(0, "observed_type", [observed_type(numeric[column]) for column in numeric_columns])
     summary["mode"] = numeric.mode(dropna=True).iloc[0]
     summary["missing"] = numeric.isna().sum()
     summary["unique"] = numeric.nunique(dropna=True)
+    summary["zero_fraction"] = numeric.eq(0).mean()
     summary["iqr"] = summary["q3"] - summary["q1"]
     summary["skew"] = numeric.skew()
     summary["max_abs_z"] = ((numeric - numeric.mean()) / numeric.std()).abs().max()

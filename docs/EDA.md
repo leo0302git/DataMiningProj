@@ -14,7 +14,26 @@ uv run python analysis/eda.py
 
 - 合并官方训练集与测试集后共 597 个样本、196 个数值描述符，另有 `SMILES` 标识和二分类目标 `Label`。
 - 阴性 449 个（75.2%），阳性 148 个（24.8%）；无缺失值、重复行或重复 `SMILES`。
-- 完整统计见 [DIA feature summary](../results/eda/dia/feature_summary.csv)。
+- 官方 ZIP 中的两个 CSV 均为 198 列，即 `Label`、`SMILES` 和 196 个输入特征；无空列、重复列名或额外索引列。`RDKit_ChemDes.xlsx` 也列出 196 个描述符，名称与 CSV 第 3–198 列完全一致。
+- 完整统计见 [DIA feature summary](../results/eda/dia/feature_summary.csv)，其中 `observed_type` 给出每个特征的实际取值类型。
+
+### 输入特征类型
+
+类型按合并后的 597 个样本实际取值判定，并采用互斥分类。只有同时出现 0 和 1 才算二值特征；始终为 0 的列单独归为常量，避免把无信息列误称为二值特征。
+
+从 CSV 的存储类型看，pandas 将 113 列识别为 `int64`、83 列识别为 `float64`。下面进一步把 113 个整数存储列拆成常量、0–1 二值和一般整数计数。
+
+| 类型 | 数量 | 判定规则 |
+|---|---:|---|
+| 常量 | 17 | 全部样本取同一个值，当前均为 0 |
+| 0–1 二值 | 20 | 非常量，且取值集合恰好为 `{0, 1}` |
+| 整数 | 76 | 非常量、非二值，所有观测值均为整数 |
+| 浮点 | 83 | 至少有一个观测值带小数部分 |
+| 其他 | 0 | 没有非数值、缺失或无穷值输入特征 |
+
+20 个实际二值特征是：`fr_C_S`、`fr_SH`、`fr_azo`、`fr_benzodiazepine`、`fr_dihydropyridine`、`fr_epoxide`、`fr_furan`、`fr_hdrzine`、`fr_hdrzone`、`fr_lactam`、`fr_lactone`、`fr_morpholine`、`fr_nitro_arom_nonortho`、`fr_nitroso`、`fr_oxazole`、`fr_oxime`、`fr_sulfone`、`fr_term_acetylene`、`fr_tetrazole`、`fr_urea`。
+
+17 个常量特征是：`NumRadicalElectrons`、`SMR_VSA8`、`SlogP_VSA9`、`VSA_EState1`–`VSA_EState7`、`fr_azide`、`fr_barbitur`、`fr_diazo`、`fr_isocyan`、`fr_isothiocyan`、`fr_prisulfonamd`、`fr_thiocyan`。76 个整数特征和 83 个浮点特征的逐列归类保存在统计表中。
 
 ### 六项分析及发现
 
