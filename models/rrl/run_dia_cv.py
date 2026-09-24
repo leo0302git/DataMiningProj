@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--structure', default='5@16')
     parser.add_argument('--learning-rate', type=float, default=0.002)
+    parser.add_argument('--quantile-thresholds', action='store_true')
     args = parser.parse_args()
 
     result_dir = ROOT / 'results' / 'dia' / args.name
@@ -36,6 +37,8 @@ def main():
             '--temp', '0.1', '--print_rule', '--device', 'cpu',
             '--output_dir', str(fold_work),
         ]
+        if args.quantile_thresholds:
+            command.append('--quantile_thresholds')
         subprocess.run(command, cwd=HERE, check=True)
         with (fold_work / 'metrics.json').open() as source:
             rows.append(json.load(source))

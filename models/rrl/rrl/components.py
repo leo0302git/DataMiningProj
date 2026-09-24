@@ -35,7 +35,7 @@ class Binarize(torch.autograd.Function):
 class BinarizeLayer(nn.Module):
     """Implement the feature discretization and binarization."""
 
-    def __init__(self, n, input_dim, use_not=False, left=None, right=None):
+    def __init__(self, n, input_dim, use_not=False, left=None, right=None, cut_points=None):
         super(BinarizeLayer, self).__init__()
         self.n = n
         self.input_dim = input_dim
@@ -52,7 +52,9 @@ class BinarizeLayer(nn.Module):
         self.register_buffer('right', right)
 
         if self.input_dim[1] > 0:
-            if self.left is not None and self.right is not None:
+            if cut_points is not None:
+                cl = cut_points
+            elif self.left is not None and self.right is not None:
                 cl = self.left + torch.rand(self.n, self.input_dim[1]) * (self.right - self.left)
             else:
                 cl = torch.randn(self.n, self.input_dim[1])

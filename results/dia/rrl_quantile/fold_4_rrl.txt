@@ -1,0 +1,18 @@
+RID	Label_0(b=0.0155)	Label_1(b=-0.0686)	Support	Rule
+(-1, 10)	0.2382	0.0009	0.7280	fr_NH2 <= -0.000 & fr_aniline <= 1.000
+(-1, 13)	-0.2108	-0.0118	0.2364	MinAbsEStateIndex > 0.054 & SMR_VSA5 > 19.449 & MaxPartialCharge <= 0.344 & NumSaturatedCarbocycles <= 1.000 & PEOE_VSA9 <= 24.080
+(-1, 14)	0.0168	0.1808	0.1736	SMR_VSA10 > 11.595 & SMR_VSA3 > 0.000 & NumAromaticRings <= 3.000 & PEOE_VSA13 <= 0.000 & SMR_VSA3 <= 14.602 & fr_Imine <= -0.000 & fr_NH1 <= 1.000 & fr_piperdine <= 0.000
+(-1, 5)	-0.1730	0.0283	0.1276	NumAliphaticRings > 0.000 & PEOE_VSA8 <= 16.748 & SMR_VSA10 <= 33.296 & SMR_VSA7 <= 52.007 & SlogP_VSA11 <= 5.750 & fr_NH1 <= 1.000 & fr_bicyclic <= 3.000 & fr_piperdine <= 0.000
+(-1, 8)	0.0007	0.1617	0.2678	EState_VSA4 <= 25.683 & MinAbsPartialCharge <= 0.340 & NumAliphaticRings <= 3.000 & SMR_VSA9 <= 11.499 & VSA_EState8 <= 0.000 & fr_Nhpyrrole <= -0.000 & fr_alkyl_halide <= 0.000 & fr_nitro <= -0.000 & fr_unbrch_alkane <= 0.000
+(-1, 15)	-0.1190	0.1606	0.1381	NumHDonors > 1.000 & PEOE_VSA1 > 10.213 & PEOE_VSA10 > 0.000 & SMR_VSA7 > 11.649 & HallKierAlpha <= -1.510 & HeavyAtomMolWt <= 444.057 & fr_Ar_NH <= -0.000 & fr_Imine <= -0.000 & fr_piperdine <= 0.000 & fr_thiazole <= -0.000
+(-1, 12)	-0.0426	-0.1413	0.6004	PEOE_VSA9 > -0.000 & PEOE_VSA2 <= 14.384 & fr_pyridine <= 0.000
+(-1, 1)	0.0321	-0.1104	0.5418	PEOE_VSA2 <= 9.589 & fr_aniline <= -0.000
+(-1, 9)	-0.1089	0.0298	0.3117	NumAliphaticRings > 0.000 & PEOE_VSA8 <= 30.697 & SMR_VSA3 <= 14.602 & fr_Imine <= -0.000 & fr_alkyl_halide <= 0.000 & fr_unbrch_alkane <= 0.000
+(-1, 2)	-0.0731	0.1038	0.2490	fr_NH0 > -0.000 & HallKierAlpha <= -1.060 & MinEStateIndex <= -0.513 & NumAromaticRings <= 3.000 & fr_Imine <= -0.000 & fr_piperdine <= 0.000
+(-1, 6)	-0.0124	-0.1022	0.2950	MaxAbsPartialCharge > 0.360 & MinPartialCharge > -0.497 & EState_VSA7 <= 12.133 & PEOE_VSA12 <= 5.907
+(-1, 7)	0.0179	-0.0997	0.6213	MinPartialCharge > -0.497 & SMR_VSA5 <= 70.374 & fr_ArN <= -0.000
+(-1, 3)	-0.0892	0.0413	0.4079	SMR_VSA10 > 5.907 & SMR_VSA10 <= 33.296 & SMR_VSA6 <= 26.210 & SMR_VSA9 <= 11.499 & fr_Imine <= -0.000 & fr_alkyl_halide <= 0.000
+(-1, 11)	-0.0220	-0.0867	0.9100	fr_aniline <= 1.000
+(-1, 4)	0.0707	-0.0207	0.5669	EState_VSA8 <= 16.724 & SMR_VSA5 <= 70.374
+(-1, 0)	0.0527	0.0109	0.5230	fr_bicyclic <= 0.000
+############################################################

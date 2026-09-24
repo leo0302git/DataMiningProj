@@ -72,6 +72,12 @@ def train_model(args):
     y_fname = db_enc.y_fname
     discrete_flen = db_enc.discrete_flen
     continuous_flen = db_enc.continuous_flen
+    cut_points = None
+    if args.quantile_thresholds and continuous_flen:
+        continuous = train_loader.dataset.tensors[0][:, discrete_flen:].numpy()
+        quantiles = np.arange(1, int(args.structure.split('@')[0]) + 1)
+        quantiles = quantiles / (len(quantiles) + 1)
+        cut_points = torch.tensor(np.quantile(continuous, quantiles, axis=0), dtype=torch.float32)
 
     rrl = RRL(dim_list=[(discrete_flen, continuous_flen)] + list(map(int, args.structure.split('@'))) + [len(y_fname)],
               device_id=device,
@@ -88,6 +94,7 @@ def train_model(args):
               beta=args.beta,
               gamma=args.gamma,
               temperature=args.temp,
+              cut_points=cut_points,
               distributed=False)
 
     rrl.train_model(

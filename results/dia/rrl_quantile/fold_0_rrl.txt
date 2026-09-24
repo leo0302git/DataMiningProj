@@ -1,0 +1,17 @@
+RID	Label_0(b=0.0642)	Label_1(b=-0.0674)	Support	Rule
+(-1, 12)	-0.2175	-0.0050	0.2809	EState_VSA1 > 0.000 & SMR_VSA3 > 0.000 & MaxPartialCharge <= 0.343 & fr_Imine <= 0.000 & fr_allylic_oxid <= 0.000
+(-1, 13)	-0.0152	0.2127	0.1593	SMR_VSA10 > 11.566 & fr_bicyclic > 0.000 & SMR_VSA3 <= 14.451 & fr_Ar_NH <= -0.000 & fr_Imine <= 0.000 & fr_NH1 <= 1.000 & fr_methoxy <= -0.000 & fr_piperdine <= 0.000 & fr_unbrch_alkane <= 0.000
+(-1, 7)	-0.0210	0.1833	0.3019	MinAbsEStateIndex > 0.057 & MinAbsPartialCharge <= 0.339 & NumAliphaticRings <= 3.000 & NumAromaticRings <= 2.000 & VSA_EState8 <= 1.557 & fr_imidazole <= -0.000 & fr_unbrch_alkane <= 0.000
+(-1, 9)	0.1565	0.0825	0.5996	Kappa3 <= 6.625 & fr_NH2 <= -0.000 & fr_aniline <= 1.000
+(-1, 11)	-0.0445	-0.1394	0.4025	BalabanJ <= 1.955 & fr_ArN <= -0.000 & fr_piperzine <= -0.000 & fr_pyridine <= 0.000
+(-1, 6)	0.0445	-0.1263	0.6499	SMR_VSA5 <= 70.667 & SlogP_VSA10 <= 9.454 & fr_ArN <= -0.000
+(-1, 4)	-0.1241	-0.0206	0.4822	NumAromaticRings > -0.000 & RingCount <= 4.000 & fr_Imine <= 0.000 & fr_NH1 <= 1.000
+(-1, 3)	-0.1186	0.0706	0.1530	SlogP_VSA1 > 4.722 & SlogP_VSA6 > 6.197 & Chi4n <= 5.682 & EState_VSA6 <= 23.361 & Kappa3 <= 3.575 & SlogP_VSA1 <= 14.670 & fr_Imine <= 0.000 & fr_ether <= 1.000 & fr_nitro <= 0.000
+(-1, 5)	-0.0063	-0.1083	0.7841	SMR_VSA6 > -0.000
+(-1, 10)	-0.0031	-0.1056	0.6059	fr_ArN <= -0.000 & fr_amide <= 0.000 & fr_aniline <= 1.000 & fr_nitrile <= 0.000
+(-1, 14)	-0.0427	0.0843	0.2516	NumHDonors > 1.000 & Chi4n <= 5.682 & HallKierAlpha <= -1.460 & fr_Imine <= 0.000 & fr_bicyclic <= 3.000 & fr_piperdine <= 0.000 & fr_thiazole <= -0.000
+(-1, 1)	0.0044	-0.0827	0.3920	SlogP_VSA3 > 4.622 & EState_VSA10 <= 15.825 & fr_Al_OH_noTert <= -0.000 & fr_C_O <= 2.000
+(-1, 0)	0.0772	-0.0136	0.3711	Kappa3 <= 6.625 & PEOE_VSA2 <= 9.589 & SlogP_VSA10 <= 9.454 & fr_Al_OH_noTert <= -0.000
+(-1, 8)	-0.0640	-0.0151	0.5807	EState_VSA4 <= 25.683 & SMR_VSA3 <= 14.451
+(-1, 2)	-0.0271	0.0578	0.4486	EState_VSA4 <= 37.867 & PEOE_VSA5 <= -0.000 & VSA_EState8 <= 0.000
+############################################################

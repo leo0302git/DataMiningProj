@@ -13,7 +13,7 @@ TEST_CNT_MOD = 500
 
 
 class Net(nn.Module):
-    def __init__(self, dim_list, use_not=False, left=None, right=None, use_nlaf=False, estimated_grad=False, use_skip=True, alpha=0.999, beta=8, gamma=1, temperature=0.01):
+    def __init__(self, dim_list, use_not=False, left=None, right=None, cut_points=None, use_nlaf=False, estimated_grad=False, use_skip=True, alpha=0.999, beta=8, gamma=1, temperature=0.01):
         super(Net, self).__init__()
 
         self.dim_list = dim_list
@@ -34,7 +34,7 @@ class Net(nn.Module):
                 num += skip_from_layer.output_dim
 
             if i == 1:
-                layer = BinarizeLayer(dim_list[i], num, self.use_not, self.left, self.right)
+                layer = BinarizeLayer(dim_list[i], num, self.use_not, self.left, self.right, cut_points)
                 layer_name = 'binary{}'.format(i)
             elif i == len(dim_list) - 1:
                 layer = LRLayer(dim_list[i], num)
@@ -92,7 +92,7 @@ class MyDistributedDataParallel(torch.nn.parallel.DistributedDataParallel):
 
 class RRL:
     def __init__(self, dim_list, device_id, use_not=False, is_rank0=False, log_file=None, writer=None, left=None,
-                 right=None, save_best=False, estimated_grad=False, save_path=None, distributed=True, use_skip=False, 
+                 right=None, cut_points=None, save_best=False, estimated_grad=False, save_path=None, distributed=True, use_skip=False,
                  use_nlaf=False, alpha=0.999, beta=8, gamma=1, temperature=0.01):
         super(RRL, self).__init__()
         self.dim_list = dim_list
@@ -122,7 +122,7 @@ class RRL:
                 logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w', format=log_format)
         self.writer = writer
 
-        self.net = Net(dim_list, use_not=use_not, left=left, right=right, use_nlaf=use_nlaf, estimated_grad=estimated_grad, use_skip=use_skip, alpha=alpha, beta=beta, gamma=gamma, temperature=temperature)
+        self.net = Net(dim_list, use_not=use_not, left=left, right=right, cut_points=cut_points, use_nlaf=use_nlaf, estimated_grad=estimated_grad, use_skip=use_skip, alpha=alpha, beta=beta, gamma=gamma, temperature=temperature)
         self.device = torch.device(self.device_id)
         self.net.to(self.device)
         if distributed:

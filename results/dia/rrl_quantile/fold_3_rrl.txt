@@ -1,0 +1,18 @@
+RID	Label_0(b=-0.0127)	Label_1(b=-0.0404)	Support	Rule
+(-1, 14)	-0.0265	0.2241	0.2155	SMR_VSA10 > 11.566 & Chi0v <= 19.889 & EState_VSA9 <= 19.096 & HeavyAtomMolWt <= 445.531 & SMR_VSA3 <= 14.146 & SlogP_VSA1 <= 11.467 & fr_Imine <= -0.000 & fr_NH1 <= 1.000 & fr_imidazole <= 0.000 & fr_unbrch_alkane <= -0.000
+(-1, 13)	-0.1930	-0.0296	0.2845	EState_VSA1 > -0.000 & SMR_VSA3 > 4.567 & MaxPartialCharge <= 0.342 & NumSaturatedRings <= 2.000 & fr_Imine <= -0.000
+(-1, 10)	0.1635	0.0757	0.4770	SlogP_VSA3 <= 15.708 & fr_NH2 <= -0.000 & fr_aniline <= 1.000
+(-1, 12)	-0.0465	-0.1374	0.5628	EState_VSA7 <= 20.100 & fr_C_O_noCOO <= 2.000 & fr_sulfonamd <= -0.000
+(-1, 11)	0.0223	-0.1311	0.5837	EState_VSA10 <= 23.881 & NumHDonors <= 2.000 & fr_ArN <= 0.000 & fr_aniline <= 1.000 & fr_nitrile <= 0.000
+(-1, 15)	-0.0833	0.1249	0.1987	NHOHCount > 0.000 & NumHAcceptors > 2.000 & PEOE_VSA10 > -0.000 & SMR_VSA7 > 12.278 & HallKierAlpha <= -1.460 & HeavyAtomMolWt <= 445.531 & NumAliphaticHeterocycles <= 1.000 & fr_Imine <= -0.000 & fr_bicyclic <= 3.000 & fr_piperdine <= 0.000
+(-1, 7)	0.0413	-0.1231	0.4247	EState_VSA10 > 8.418 & PEOE_VSA2 <= 14.384 & SlogP_VSA10 <= 5.818 & fr_aniline <= 1.000
+(-1, 5)	-0.1193	-0.0254	0.3033	NHOHCount > 1.000 & NumAromaticRings > 0.000 & EState_VSA8 <= 30.940 & RingCount <= 4.000
+(-1, 8)	0.0479	0.1145	0.3515	MinAbsPartialCharge <= 0.339 & NumAliphaticRings <= 3.000 & PEOE_VSA8 <= 16.748 & SMR_VSA9 <= 11.499
+(-1, 0)	0.1067	-0.0431	0.3389	NumSaturatedRings <= 0.000 & SlogP_VSA10 <= 5.818 & fr_Al_OH_noTert <= 0.000
+(-1, 3)	-0.0968	0.0489	0.3787	SMR_VSA3 > -0.000 & RingCount <= 4.000 & SlogP_VSA1 <= 11.467 & fr_piperdine <= 0.000 & fr_sulfide <= 0.000
+(-1, 1)	0.0167	-0.0951	0.4749	Kappa1 > 11.472 & SlogP_VSA3 > 0.000 & MaxAbsEStateIndex <= 13.306 & fr_C_O <= 2.000
+(-1, 9)	-0.0896	0.0105	0.5230	NumAliphaticHeterocycles <= 1.000 & NumAromaticRings <= 3.000 & PEOE_VSA8 <= 30.789 & fr_Imine <= -0.000 & fr_alkyl_halide <= 0.000 & fr_unbrch_alkane <= -0.000
+(-1, 6)	-0.0332	-0.0814	0.5000	PEOE_VSA6 <= 23.748
+(-1, 2)	-0.0333	0.0640	0.3577	MinAbsPartialCharge > 0.216 & HallKierAlpha <= -1.460 & fr_Nhpyrrole <= -0.000 & fr_methoxy <= -0.000 & fr_thiophene <= 0.000
+(-1, 4)	0.0594	-0.0095	0.7531	fr_ester <= -0.000 & fr_para_hydroxylation <= 0.000
+############################################################

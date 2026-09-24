@@ -46,6 +46,8 @@ parser.add_argument('-s', '--structure', type=str, default='5@64',
                          'E.g., 10@64, 10@64@32@16.')
 parser.add_argument('--output_dir', type=str, default=None,
                     help='Optional explicit directory for one experiment run.')
+parser.add_argument('--quantile_thresholds', action='store_true',
+                    help='Initialize continuous cut points from training-fold quantiles.')
 
 rrl_args = parser.parse_args()
 rrl_args.folder_name = '{}_e{}_bs{}_lr{}_lrdr{}_lrde{}_wd{}_ki{}_rc{}_useNOT{}_saveBest{}_useNLAF{}_estimatedGrad{}_useSkip{}_alpha{}_beta{}_gamma{}_temp{}'.format(
@@ -56,6 +58,8 @@ rrl_args.folder_name = '{}_e{}_bs{}_lr{}_lrdr{}_lrde{}_wd{}_ki{}_rc{}_useNOT{}_s
 if not os.path.exists('log_folder'):
     os.mkdir('log_folder')
 rrl_args.folder_name = rrl_args.folder_name + '_L' + rrl_args.structure
+if rrl_args.quantile_thresholds:
+    rrl_args.folder_name += '_quantile'
 rrl_args.set_folder_path = os.path.join('log_folder', rrl_args.data_set)
 if not os.path.exists(rrl_args.set_folder_path):
     os.mkdir(rrl_args.set_folder_path)
