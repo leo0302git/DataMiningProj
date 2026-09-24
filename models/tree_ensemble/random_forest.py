@@ -14,7 +14,7 @@ def fit_random_forest(X_train, y_train, X_valid, y_valid, random_state=42):
     best_score, best_params = -1, None
     for params in candidates:
         model = RandomForestClassifier(
-            n_estimators=300, random_state=random_state, n_jobs=-1, **params)
+            n_estimators=300, random_state=random_state, n_jobs=1, **params)
         model.fit(X_train, y_train)
         score = average_precision_score(y_valid, model.predict_proba(X_valid)[:, 1])
         if score > best_score:

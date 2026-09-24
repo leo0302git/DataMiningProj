@@ -254,11 +254,12 @@ class RRL:
         return epoch_histc
 
     @torch.no_grad()
-    def predict(self, data_loader):
+    def predict(self, data_loader, binarized=False):
         y_true, logits = [], []
         for X, y in data_loader:
             y_true.append(y)
-            logits.append(self.net.forward(X.to(self.device, non_blocking=True)))
+            X = X.to(self.device, non_blocking=True)
+            logits.append(self.net.bi_forward(X) if binarized else self.net.forward(X))
         return (
             torch.cat(y_true).cpu().numpy().argmax(axis=1),
             torch.cat(logits).cpu().numpy(),

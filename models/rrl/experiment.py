@@ -139,6 +139,7 @@ def test_model(args):
         dataset, args.batch_size, args.ith_kfold, save_best=False)
     accuracy, macro_f1 = rrl.test(test_loader=test_loader, set_name='Test')
     y_true, logits = rrl.predict(test_loader)
+    _, discrete_logits = rrl.predict(test_loader, binarized=True)
     shifted = logits - logits.max(axis=1, keepdims=True)
     probabilities = np.exp(shifted) / np.exp(shifted).sum(axis=1, keepdims=True)
     y_score = probabilities[:, 1]
@@ -176,7 +177,8 @@ def test_model(args):
         'y_true': y_true,
         'y_pred': y_pred,
         'positive_probability': y_score,
-    }).to_csv(os.path.join(args.folder_path, 'predictions.csv'), index=False)
+    }).to_csv(os.path.join(args.folder_path, 'predictions.csv'),
+              index=False, float_format='%.10g')
     result = {
         'fold': args.ith_kfold,
         'accuracy': accuracy,
@@ -190,6 +192,8 @@ def test_model(args):
         'rule_count': len(rule2weights),
         'edge_count': edge_cnt,
         'log_edges': log_edges if edge_cnt else None,
+        'decision_fidelity': float(np.mean(
+            logits.argmax(axis=1) == discrete_logits.argmax(axis=1))),
     }
     with open(os.path.join(args.folder_path, 'metrics.json'), 'w') as output:
         json.dump(result, output, indent=2)

@@ -46,10 +46,10 @@ def main():
             shutil.copyfile(fold_work / filename, result_dir / f'fold_{fold}_{filename}')
 
     folds = pd.DataFrame(rows)
-    folds.to_csv(result_dir / 'fold_metrics.csv', index=False)
+    folds.to_csv(result_dir / 'fold_metrics.csv', index=False, float_format='%.10g')
     metrics = [column for column in folds if column != 'fold']
     summary = folds[metrics].agg(['mean', 'std']).T
-    summary.to_csv(result_dir / 'summary.csv')
+    summary.to_csv(result_dir / 'summary.csv', float_format='%.10g')
     print(summary.round(4).to_string())
 
 

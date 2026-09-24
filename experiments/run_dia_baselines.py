@@ -67,12 +67,13 @@ def main():
                      **evaluate(y[test_index], manual_pred, manual_score)})
         pd.DataFrame({'index': test_index, 'y_true': y[test_index],
                       'y_pred': manual_pred, 'positive_probability': manual_score}).to_csv(
-                          output / f'manual_logistic_fold_{fold}_predictions.csv', index=False)
+                          output / f'manual_logistic_fold_{fold}_predictions.csv',
+                          index=False, float_format='%.10g')
 
         params = fit_random_forest(
             X[inner_train], y[inner_train], X[valid], y[valid], random_state=42 + fold)
         forest = RandomForestClassifier(
-            n_estimators=300, n_jobs=-1, random_state=42 + fold, **params).fit(
+            n_estimators=300, n_jobs=1, random_state=42 + fold, **params).fit(
                 X[train_index], y[train_index])
         forest_score = forest.predict_proba(X[test_index])[:, 1]
         forest_pred = (forest_score >= 0.5).astype(int)
@@ -81,13 +82,14 @@ def main():
                      **evaluate(y[test_index], forest_pred, forest_score)})
         pd.DataFrame({'index': test_index, 'y_true': y[test_index],
                       'y_pred': forest_pred, 'positive_probability': forest_score}).to_csv(
-                          output / f'random_forest_fold_{fold}_predictions.csv', index=False)
+                          output / f'random_forest_fold_{fold}_predictions.csv',
+                          index=False, float_format='%.10g')
 
     fold_metrics = pd.DataFrame(rows)
-    fold_metrics.to_csv(output / 'fold_metrics.csv', index=False)
+    fold_metrics.to_csv(output / 'fold_metrics.csv', index=False, float_format='%.10g')
     metric_columns = list(evaluate(np.array([0, 1]), np.array([0, 1]), np.array([0.0, 1.0])))
     summary = fold_metrics.groupby('model')[metric_columns].agg(['mean', 'std'])
-    summary.to_csv(output / 'summary.csv')
+    summary.to_csv(output / 'summary.csv', float_format='%.10g')
     print(summary.round(4).to_string())
 
 
