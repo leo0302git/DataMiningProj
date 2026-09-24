@@ -44,6 +44,8 @@ parser.add_argument('--print_rule', action="store_true",
 parser.add_argument('-s', '--structure', type=str, default='5@64',
                     help='Set the number of nodes in the binarization layer and logical layers. '
                          'E.g., 10@64, 10@64@32@16.')
+parser.add_argument('--output_dir', type=str, default=None,
+                    help='Optional explicit directory for one experiment run.')
 
 rrl_args = parser.parse_args()
 rrl_args.folder_name = '{}_e{}_bs{}_lr{}_lrdr{}_lrde{}_wd{}_ki{}_rc{}_useNOT{}_saveBest{}_useNLAF{}_estimatedGrad{}_useSkip{}_alpha{}_beta{}_gamma{}_temp{}'.format(
@@ -57,9 +59,9 @@ rrl_args.folder_name = rrl_args.folder_name + '_L' + rrl_args.structure
 rrl_args.set_folder_path = os.path.join('log_folder', rrl_args.data_set)
 if not os.path.exists(rrl_args.set_folder_path):
     os.mkdir(rrl_args.set_folder_path)
-rrl_args.folder_path = os.path.join(rrl_args.set_folder_path, rrl_args.folder_name)
+rrl_args.folder_path = rrl_args.output_dir or os.path.join(rrl_args.set_folder_path, rrl_args.folder_name)
 if not os.path.exists(rrl_args.folder_path):
-    os.mkdir(rrl_args.folder_path)
+    os.makedirs(rrl_args.folder_path)
 rrl_args.model = os.path.join(rrl_args.folder_path, 'model.pth')
 rrl_args.rrl_file = os.path.join(rrl_args.folder_path, 'rrl.txt')
 rrl_args.plot_file = os.path.join(rrl_args.folder_path, 'plot_file.pdf')

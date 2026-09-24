@@ -1,0 +1,17 @@
+RID	Label_0(b=0.0911)	Label_1(b=0.0616)	Support	Rule
+(-1, 8)	-0.0168	-0.2073	0.3201	SMR_VSA5 <= 20.006 & SlogP_VSA10 <= 13.155
+(-1, 14)	0.1587	0.0122	0.6736	EState_VSA10 > 6.617
+(-1, 2)	-0.1524	-0.0086	0.3933	EState_VSA1 > 0.456 & Chi4n <= 5.976 & EState_VSA9 <= 11.401
+(-1, 6)	-0.1500	0.0419	0.1569	NumHAcceptors > 3.662 & SMR_VSA3 > 4.497 & PEOE_VSA9 <= 21.437 & SMR_VSA3 <= 11.220 & SlogP_VSA8 <= 9.666 & fr_imidazole <= 0.018 & fr_piperdine <= 0.405
+(-1, 11)	0.1328	0.0209	0.6255	Chi3v > 3.427 & EState_VSA2 > 3.168 & MinPartialCharge > -0.583
+(-1, 4)	-0.1316	0.1287	0.2992	BertzCT > 241.698 & EState_VSA1 > 0.456 & NumHDonors > 0.617 & Chi4n <= 5.947 & EState_VSA4 <= 39.548 & EState_VSA8 <= 39.295 & HallKierAlpha <= -1.492 & NumSaturatedRings <= 3.362 & fr_Imine <= 0.036 & fr_piperdine <= 0.842
+(-1, 9)	0.0020	-0.1284	0.5167	Chi3v > 3.427 & SMR_VSA5 <= 81.858 & fr_ArN <= 0.160 & fr_para_hydroxylation <= 0.174
+(-1, 10)	0.1133	-0.0140	0.6339	PEOE_VSA4 <= 9.056 & SlogP_VSA7 <= 2.260 & fr_NH2 <= 0.514
+(-1, 0)	0.0350	-0.1087	0.4498	EState_VSA7 <= 20.273 & MaxAbsPartialCharge <= 0.595 & fr_ArN <= 0.630 & fr_alkyl_carbamate <= 0.238 & fr_aniline <= 0.256 & fr_para_hydroxylation <= 0.493
+(-1, 1)	-0.1085	0.0142	0.5105	Chi0v <= 19.109 & PEOE_VSA9 <= 21.437 & SlogP_VSA5 <= 44.699
+(-1, 5)	0.1064	-0.0872	0.3117	Kappa3 > 3.112 & EState_VSA10 <= 21.671 & SMR_VSA5 <= 81.858 & fr_para_hydroxylation <= 0.493 & fr_piperzine <= 0.075
+(-1, 13)	-0.0164	0.0849	0.2929	EState_VSA7 > 13.478 & SMR_VSA3 > 4.497 & fr_NH0 <= 4.371
+(-1, 7)	-0.0332	0.0645	0.3138	SlogP_VSA1 > 1.096 & BalabanJ <= 3.060 & PEOE_VSA7 <= 60.909 & PEOE_VSA8 <= 25.447 & RingCount <= 4.185 & fr_Imine <= 0.049 & fr_NH1 <= 1.561 & fr_piperdine <= 0.405
+(-1, 3)	0.0278	-0.0568	0.8201	PEOE_VSA12 <= 6.205 & SlogP_VSA10 <= 13.155
+(-1, 12)	0.0418	-0.0158	0.2280	Chi4v > 2.708 & SMR_VSA7 > 51.528 & EState_VSA10 <= 21.671
+############################################################

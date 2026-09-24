@@ -1,0 +1,16 @@
+RID	Label_0(b=0.1553)	Label_1(b=0.0968)	Support	Rule
+(-1, 8)	-0.0429	-0.1812	0.2264	SMR_VSA5 <= 20.152 & SlogP_VSA10 <= 14.231 & fr_NH2 <= 0.553
+(-1, 12)	-0.0802	0.1487	0.2348	NumHDonors > 1.965 & SMR_VSA3 > 4.361 & EState_VSA4 <= 27.774 & fr_bicyclic <= 2.003
+(-1, 13)	0.1442	0.0267	0.4801	EState_VSA10 > 6.808 & Chi0n <= 22.490 & fr_NH2 <= 0.753
+(-1, 6)	-0.1410	0.0328	0.2201	SMR_VSA10 > 7.153 & SMR_VSA3 > 4.361 & BalabanJ <= 3.132 & SMR_VSA3 <= 11.259 & SlogP_VSA11 <= 10.434 & fr_NH1 <= 1.707 & fr_piperdine <= 0.396
+(-1, 1)	-0.1380	0.0437	0.2348	HallKierAlpha <= -1.542 & MinEStateIndex <= -0.232 & NumAromaticHeterocycles <= 0.081 & SMR_VSA6 <= 24.361
+(-1, 10)	0.1216	0.0321	0.5723	Chi3v > 3.377 & HeavyAtomCount > 19.359 & MinPartialCharge > -0.579 & fr_para_hydroxylation <= 0.199
+(-1, 2)	-0.1192	-0.0419	0.9413	fr_Imine <= 0.058
+(-1, 9)	-0.0123	-0.1142	0.6541	MolMR <= 162.835 & fr_NH2 <= 0.356 & fr_para_hydroxylation <= 0.199
+(-1, 7)	-0.0817	0.1130	0.2600	NumAliphaticRings > 0.262 & BalabanJ <= 3.132 & EState_VSA6 <= 20.224 & RingCount <= 4.186 & SlogP_VSA2 <= 84.295 & SlogP_VSA4 <= 22.238 & fr_Imine <= 0.058 & fr_ether <= 1.820 & fr_nitro <= 0.077
+(-1, 4)	-0.1089	0.1060	0.1195	MaxAbsPartialCharge > 0.476 & EState_VSA4 <= 40.149 & EState_VSA8 <= 43.897 & HallKierAlpha <= -1.478 & MaxAbsEStateIndex <= 16.103 & MinEStateIndex <= -0.232 & NumAromaticHeterocycles <= 1.112 & NumSaturatedRings <= 3.480 & SMR_VSA6 <= 29.487 & fr_Ar_NH <= 0.045 & fr_Imine <= 0.046 & fr_ether <= 1.820 & fr_sulfide <= 0.409
+(-1, 5)	0.1069	-0.0877	0.3166	PEOE_VSA10 <= 12.767 & PEOE_VSA2 <= 5.625 & fr_aniline <= 0.655
+(-1, 3)	0.0556	-0.0846	0.7149	SlogP_VSA3 > 3.754 & SlogP_VSA10 <= 14.231 & SlogP_VSA3 <= 28.605
+(-1, 11)	0.0665	-0.0405	0.3836	Chi3v > 3.377 & EState_VSA7 <= 12.285
+(-1, 0)	-0.0153	-0.0584	0.7254	MaxAbsPartialCharge <= 0.590 & PEOE_VSA2 <= 9.701
+############################################################

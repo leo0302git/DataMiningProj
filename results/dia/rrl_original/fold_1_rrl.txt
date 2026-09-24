@@ -1,0 +1,16 @@
+RID	Label_0(b=0.1789)	Label_1(b=0.0424)	Support	Rule
+(-1, 6)	-0.1525	0.0444	0.2767	SMR_VSA10 > 7.548 & BalabanJ <= 3.166 & Chi3n <= 8.403 & RingCount <= 4.128 & SMR_VSA3 <= 11.109 & fr_Imine <= 0.057 & fr_ether <= 1.097 & fr_imidazole <= 0.013 & fr_piperdine <= 0.349
+(-1, 2)	-0.1461	-0.0148	0.3270	BalabanJ > 1.578 & EState_VSA1 > 0.262 & HallKierAlpha <= -0.497 & SMR_VSA9 <= 5.805 & fr_Imine <= 0.057 & fr_allylic_oxid <= 0.092
+(-1, 13)	0.1378	0.0332	0.3270	EState_VSA10 > 6.757 & TPSA > 61.866 & NumSaturatedHeterocycles <= 0.360
+(-1, 8)	-0.0884	-0.1357	0.3103	SMR_VSA5 <= 19.267 & SlogP_VSA10 <= 14.329
+(-1, 4)	-0.1202	0.1173	0.3166	EState_VSA1 > 0.262 & EState_VSA4 <= 39.679 & EState_VSA8 <= 45.649 & HallKierAlpha <= -1.499 & MaxAbsEStateIndex <= 16.013 & NumSaturatedRings <= 3.301 & SMR_VSA6 <= 29.609 & fr_Imine <= 0.044 & fr_piperdine <= 0.729
+(-1, 0)	0.0388	-0.1125	0.1971	EState_VSA7 <= 13.279 & PEOE_VSA2 <= 9.552 & fr_NH2 <= 0.703 & fr_aniline <= 0.275
+(-1, 9)	-0.0161	-0.1104	0.3291	VSA_EState8 > 0.329 & fr_para_hydroxylation <= 0.200
+(-1, 11)	0.1083	0.0455	0.7002	fr_Al_OH_noTert <= 0.510
+(-1, 10)	0.1065	-0.0072	0.3711	PEOE_VSA2 <= 9.552 & SlogP_VSA10 <= 14.329 & SlogP_VSA7 <= 1.886 & fr_NH2 <= 0.513
+(-1, 7)	-0.0666	0.0979	0.5975	PEOE_VSA5 <= 9.167 & SlogP_VSA11 <= 11.201 & fr_NH1 <= 1.681 & fr_nitro <= 0.091 & fr_piperdine <= 0.349
+(-1, 3)	0.0666	-0.0956	0.2893	MaxEStateIndex <= 12.611 & fr_NH1 <= 0.015 & fr_NH2 <= 0.703 & fr_aniline <= 0.275
+(-1, 1)	-0.0659	-0.0285	0.8847	fr_alkyl_halide <= 0.175
+(-1, 12)	0.0560	-0.0301	0.3669	EState_VSA7 <= 12.609 & PEOE_VSA10 <= 9.464
+(-1, 5)	0.0475	-0.0283	0.9036	fr_phenol <= 0.503
+############################################################
