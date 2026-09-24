@@ -1,9 +1,12 @@
 import os
+import json
 import logging
 import numpy as np
+import pandas as pd
 import torch
 torch.set_num_threads(2)
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn import metrics
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from collections import defaultdict
 
@@ -127,7 +130,12 @@ def test_model(args):
     dataset = args.data_set
     db_enc, train_loader, _, test_loader = get_data_loader(
         dataset, args.batch_size, args.ith_kfold, save_best=False)
-    rrl.test(test_loader=test_loader, set_name='Test')
+    accuracy, macro_f1 = rrl.test(test_loader=test_loader, set_name='Test')
+    y_true, logits = rrl.predict(test_loader)
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    probabilities = np.exp(shifted) / np.exp(shifted).sum(axis=1, keepdims=True)
+    y_score = probabilities[:, 1]
+    y_pred = logits.argmax(axis=1)
     if args.print_rule:
         with open(args.rrl_file, 'w') as rrl_file:
             rule2weights = rrl.rule_print(db_enc.X_fname, db_enc.y_fname, train_loader, file=rrl_file, mean=db_enc.mean, std=db_enc.std)
@@ -154,8 +162,31 @@ def test_model(args):
             edge_cnt += len(rule)
             for rid in rule:
                 connected_rid[ln - abs(rid[0])].add(rid[1])
-    logging.info('\n\t{} of RRL  Model: {}'.format(
-        metric, np.log(edge_cnt) if edge_cnt else float('-inf')))
+    log_edges = np.log(edge_cnt) if edge_cnt else float('-inf')
+    logging.info('\n\t{} of RRL  Model: {}'.format(metric, log_edges))
+
+    pd.DataFrame({
+        'y_true': y_true,
+        'y_pred': y_pred,
+        'positive_probability': y_score,
+    }).to_csv(os.path.join(args.folder_path, 'predictions.csv'), index=False)
+    result = {
+        'fold': args.ith_kfold,
+        'accuracy': accuracy,
+        'balanced_accuracy': metrics.balanced_accuracy_score(y_true, y_pred),
+        'macro_f1': macro_f1,
+        'positive_precision': metrics.precision_score(y_true, y_pred, zero_division=0),
+        'positive_recall': metrics.recall_score(y_true, y_pred, zero_division=0),
+        'positive_f1': metrics.f1_score(y_true, y_pred, zero_division=0),
+        'roc_auc': metrics.roc_auc_score(y_true, y_score),
+        'pr_auc': metrics.average_precision_score(y_true, y_score),
+        'rule_count': len(rule2weights),
+        'edge_count': edge_cnt,
+        'log_edges': log_edges if edge_cnt else None,
+    }
+    with open(os.path.join(args.folder_path, 'metrics.json'), 'w') as output:
+        json.dump(result, output, indent=2)
+    return result
 
 
 

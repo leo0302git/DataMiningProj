@@ -254,28 +254,27 @@ class RRL:
         return epoch_histc
 
     @torch.no_grad()
+    def predict(self, data_loader):
+        y_true, logits = [], []
+        for X, y in data_loader:
+            y_true.append(y)
+            logits.append(self.net.forward(X.to(self.device, non_blocking=True)))
+        return (
+            torch.cat(y_true).cpu().numpy().argmax(axis=1),
+            torch.cat(logits).cpu().numpy(),
+        )
+
+    @torch.no_grad()
     def test(self, test_loader=None, set_name='Validation'):
         if test_loader is None:
             raise Exception("Data loader is unavailable!")
-        
-        y_list = []
-        for X, y in test_loader:
-            y_list.append(y)
-        y_true = torch.cat(y_list, dim=0)
-        y_true = y_true.cpu().numpy().astype(int)
-        y_true = np.argmax(y_true, axis=1)
+
+        y_true, y_pred_b = self.predict(test_loader)
         data_num = y_true.shape[0]
 
         slice_step = data_num // 40 if data_num >= 40 else 1
         logging.debug('y_true: {} {}'.format(y_true.shape, y_true[:: slice_step]))
 
-        y_pred_b_list = []
-        for X, y in test_loader:
-            X = X.to(self.device, non_blocking=True)
-            output = self.net.forward(X)
-            y_pred_b_list.append(output)
-
-        y_pred_b = torch.cat(y_pred_b_list).cpu().numpy()
         y_pred_b_arg = np.argmax(y_pred_b, axis=1)
         logging.debug('y_rrl_: {} {}'.format(y_pred_b_arg.shape, y_pred_b_arg[:: slice_step]))
         logging.debug('y_rrl: {} {}'.format(y_pred_b.shape, y_pred_b[:: (slice_step)]))
