@@ -88,11 +88,12 @@ def feature_summary(
 
 
 def heatmap(correlation: pd.DataFrame, title: str, path: Path) -> None:
-    size = max(7, 0.45 * len(correlation))
+    size = min(28, max(7, 0.45 * len(correlation)))
+    label_size = 3 if len(correlation) > 50 else 7
     fig, ax = plt.subplots(figsize=(size, size))
     image = ax.imshow(correlation, vmin=-1, vmax=1, cmap="coolwarm")
-    ax.set_xticks(range(len(correlation)), correlation.columns, rotation=90, fontsize=7)
-    ax.set_yticks(range(len(correlation)), correlation.index, fontsize=7)
+    ax.set_xticks(range(len(correlation)), correlation.columns, rotation=90, fontsize=label_size)
+    ax.set_yticks(range(len(correlation)), correlation.index, fontsize=label_size)
     ax.set_title(title)
     fig.colorbar(image, ax=ax, shrink=0.8, label="Pearson r")
     save(fig, path)
@@ -165,18 +166,28 @@ def run_dia() -> None:
 
     plot_grid(class_features, dia_boxplot, "DIA: features with largest class shifts", output / "boxplots.png")
 
-    distribution_features = (
-        summary.loc[(summary["unique"] > 10) & (summary["std"] > 0), "skew"]
+    distribution_candidates = summary.loc[(summary["unique"] > 10) & (summary["std"] > 0)]
+    distribution_features = distribution_candidates["skew"].abs().nlargest(6).index.tolist()
+    typical_features = (
+        distribution_candidates.loc[distribution_candidates["zero_fraction"] <= 0.05, "skew"]
         .abs()
-        .nlargest(6)
+        .nsmallest(6)
         .index.tolist()
     )
 
+    plot_grid(
+        typical_features,
+        dia_boxplot,
+        "DIA: less-skewed descriptors for comparison",
+        output / "boxplots_typical.png",
+    )
+
     def dia_histogram(ax: plt.Axes, column: str) -> None:
+        bins = np.histogram_bin_edges(frame[column].dropna(), bins=25)
         for label, color, name in [(0, "#4C78A8", "Negative"), (1, "#E45756", "Positive")]:
             ax.hist(
                 frame.loc[frame["Label"] == label, column],
-                bins=25,
+                bins=bins,
                 density=True,
                 alpha=0.55,
                 color=color,
@@ -186,6 +197,7 @@ def run_dia() -> None:
         ax.legend(fontsize=7)
 
     plot_grid(distribution_features, dia_histogram, "DIA: most skewed continuous descriptors", output / "histograms.png")
+    plot_grid(typical_features, dia_histogram, "DIA: less-skewed descriptors for comparison", output / "histograms_typical.png")
 
     def dia_quantile(ax: plt.Axes, column: str) -> None:
         for label, color, name in [(0, "#4C78A8", "Negative"), (1, "#E45756", "Positive")]:
@@ -196,17 +208,53 @@ def run_dia() -> None:
         ax.legend(fontsize=7)
 
     plot_grid(distribution_features, dia_quantile, "DIA: quantile plots", output / "quantile_plots.png")
-
-    correlation_features = summary[f"corr_Label"].abs().nlargest(15).index.tolist()
-    heatmap(
-        frame[correlation_features].corr(),
-        "DIA: correlation among descriptors most associated with Label",
-        output / "correlation.png",
+    plot_grid(
+        typical_features,
+        dia_quantile,
+        "DIA: less-skewed quantile plots for comparison",
+        output / "quantile_plots_typical.png",
     )
 
     variable_features = summary.index[summary["std"] > 0].tolist()
+    correlation_features = summary[f"corr_Label"].abs().nlargest(15).index.tolist()
+    heatmap(
+        frame[[*correlation_features, "Label"]].corr(),
+        "DIA: correlations among descriptors most associated with Label",
+        output / "correlation.png",
+    )
+    label_correlation = summary.loc[variable_features, "corr_Label"].sort_values()
+    label_correlation.rename("pearson_r").to_csv(output / "label_correlations.csv", float_format="%.6g")
+    fig, ax = plt.subplots(figsize=(10, 28))
+    colors = np.where(label_correlation >= 0, "#E45756", "#4C78A8")
+    ax.barh(range(len(label_correlation)), label_correlation, color=colors)
+    ax.set_yticks(range(len(label_correlation)), label_correlation.index, fontsize=4)
+    ax.axvline(0, color="black", linewidth=0.8)
+    ax.set_xlabel("Pearson r with Label")
+    ax.set_title("DIA: all non-constant descriptor correlations with Label")
+    save(fig, output / "label_correlations.png")
+
+    heatmap(
+        frame[[*variable_features, "Label"]].corr(),
+        "DIA: all non-constant descriptor and Label correlations",
+        output / "correlation_all.png",
+    )
+
     correlation = frame[variable_features].corr().abs()
-    pairs = correlation.where(np.triu(np.ones(correlation.shape), k=1).astype(bool)).stack()
+    pairs = (
+        correlation.where(np.triu(np.ones(correlation.shape), k=1).astype(bool))
+        .stack()
+        .dropna()
+    )
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.hist(pairs, bins=np.linspace(0, 1, 31), color="#4C78A8", edgecolor="white")
+    ax.set_yscale("log")
+    for threshold in [0.5, 0.7, 0.9, 0.95]:
+        ax.axvline(threshold, color="#E45756", linewidth=1, linestyle="--", alpha=0.8)
+    ax.set_xlabel("Absolute Pearson correlation |r|")
+    ax.set_ylabel("Descriptor pairs (log scale)")
+    ax.set_title("DIA: distribution of all pairwise descriptor correlations")
+    save(fig, output / "correlation_distribution.png")
+
     top_pairs = pairs.nlargest(3).index.tolist()
     fig, axes = plt.subplots(1, 3, figsize=(14, 4))
     for ax, (x, y) in zip(axes, top_pairs, strict=True):
