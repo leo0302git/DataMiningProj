@@ -3,12 +3,8 @@ import logging
 import numpy as np
 import torch
 torch.set_num_threads(2)
-from torch.utils.data.dataset import random_split
 from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.tensorboard import SummaryWriter
-import torch.multiprocessing as mp
-import torch.distributed as dist
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from collections import defaultdict
 
 from rrl.utils import read_csv, DBEncoder
@@ -17,58 +13,57 @@ from rrl.models import RRL
 DATA_DIR = './dataset'
 
 
-def get_data_loader(dataset, world_size, rank, batch_size, k=0, pin_memory=False, save_best=True):
+def get_data_loader(dataset, batch_size, k=0, pin_memory=False, save_best=True):
     data_path = os.path.join(DATA_DIR, dataset + '.data')
     info_path = os.path.join(DATA_DIR, dataset + '.info')
-    X_df, y_df, f_df, label_pos = read_csv(data_path, info_path, shuffle=True)
+    X_df, y_df, f_df, label_pos = read_csv(data_path, info_path, shuffle=False)
+
+    labels = y_df.iloc[:, 0].to_numpy()
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+    train_index, test_index = list(kf.split(X_df, labels))[k]
+    X_train_df = X_df.iloc[train_index]
+    y_train_df = y_df.iloc[train_index]
+    X_test_df = X_df.iloc[test_index]
+    y_test_df = y_df.iloc[test_index]
+
+    X_valid_df = y_valid_df = None
+    if save_best:
+        X_train_df, X_valid_df, y_train_df, y_valid_df = train_test_split(
+            X_train_df, y_train_df, test_size=0.05, random_state=42,
+            stratify=y_train_df.iloc[:, 0])
 
     db_enc = DBEncoder(f_df, discrete=False)
-    db_enc.fit(X_df, y_df)
-
-    X, y = db_enc.transform(X_df, y_df, normalized=True, keep_stat=True)
-
-    kf = KFold(n_splits=5, shuffle=True, random_state=0)
-    train_index, test_index = list(kf.split(X_df))[k]
-    X_train = X[train_index]
-    y_train = y[train_index]
-    X_test = X[test_index]
-    y_test = y[test_index]
+    db_enc.fit(X_train_df, y_train_df)
+    X_train, y_train = db_enc.transform(X_train_df, y_train_df, normalized=True)
+    X_test, y_test = db_enc.transform(X_test_df, y_test_df, normalized=True)
 
     train_set = TensorDataset(torch.tensor(X_train.astype(np.float32)), torch.tensor(y_train.astype(np.float32)))
     test_set = TensorDataset(torch.tensor(X_test.astype(np.float32)), torch.tensor(y_test.astype(np.float32)))
-
-    train_len = int(len(train_set) * 0.95)
-    train_sub, valid_set = random_split(train_set, [train_len, len(train_set) - train_len])
-
-    if save_best:  # use validation set for model selections.
-        train_set = train_sub
-
-    train_sampler = torch.utils.data.distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank)
-
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False, pin_memory=pin_memory, sampler=train_sampler)
-    valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
+    generator = torch.Generator().manual_seed(42)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,
+                              pin_memory=pin_memory, generator=generator)
+    valid_loader = None
+    if save_best:
+        X_valid, y_valid = db_enc.transform(X_valid_df, y_valid_df, normalized=True)
+        valid_set = TensorDataset(torch.tensor(X_valid.astype(np.float32)),
+                                  torch.tensor(y_valid.astype(np.float32)))
+        valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
 
     return db_enc, train_loader, valid_loader, test_loader
 
 
-def train_model(gpu, args):
-    rank = args.nr * args.gpus + gpu
-    dist.init_process_group(backend='nccl', init_method='env://', world_size=args.world_size, rank=rank)
+def train_model(args):
     torch.manual_seed(42)
-    device_id = args.device_ids[gpu]
-    torch.cuda.set_device(device_id)
-
-    if gpu == 0:
-        writer = SummaryWriter(args.folder_path)
-        is_rank0 = True
-    else:
-        writer = None
-        is_rank0 = False
+    np.random.seed(42)
+    device = torch.device(args.device)
+    writer = None
+    is_rank0 = True
 
     dataset = args.data_set
-    db_enc, train_loader, valid_loader, _ = get_data_loader(dataset, args.world_size, rank, args.batch_size,
-                                                            k=args.ith_kfold, pin_memory=True, save_best=args.save_best)
+    db_enc, train_loader, valid_loader, _ = get_data_loader(
+        dataset, args.batch_size, k=args.ith_kfold,
+        pin_memory=device.type == 'cuda', save_best=args.save_best)
 
     X_fname = db_enc.X_fname
     y_fname = db_enc.y_fname
@@ -76,7 +71,7 @@ def train_model(gpu, args):
     continuous_flen = db_enc.continuous_flen
 
     rrl = RRL(dim_list=[(discrete_flen, continuous_flen)] + list(map(int, args.structure.split('@'))) + [len(y_fname)],
-              device_id=device_id,
+              device_id=device,
               use_not=args.use_not,
               is_rank0=is_rank0,
               log_file=args.log,
@@ -89,7 +84,8 @@ def train_model(gpu, args):
               alpha=args.alpha,
               beta=args.beta,
               gamma=args.gamma,
-              temperature=args.temp)
+              temperature=args.temp,
+              distributed=False)
 
     rrl.train_model(
         data_loader=train_loader,
@@ -102,12 +98,12 @@ def train_model(gpu, args):
         log_iter=args.log_iter)
 
 
-def load_model(path, device_id, log_file=None, distributed=True):
+def load_model(path, device, log_file=None, distributed=False):
     checkpoint = torch.load(path, map_location='cpu')
     saved_args = checkpoint['rrl_args']
     rrl = RRL(
         dim_list=saved_args['dim_list'],
-        device_id=device_id,
+        device_id=device,
         is_rank0=True,
         use_not=saved_args['use_not'],
         log_file=log_file,
@@ -117,19 +113,20 @@ def load_model(path, device_id, log_file=None, distributed=True):
         use_nlaf=saved_args['use_nlaf'],
         alpha=saved_args['alpha'],
         beta=saved_args['beta'],
-        gamma=saved_args['gamma'])
+        gamma=saved_args['gamma'],
+        temperature=saved_args['temperature'])
     stat_dict = checkpoint['model_state_dict']
-    for key in list(stat_dict.keys()):
-        # remove 'module.' prefix
-        stat_dict[key[7:]] = stat_dict.pop(key)
-    rrl.net.load_state_dict(checkpoint['model_state_dict'])
+    if stat_dict and all(key.startswith('module.') for key in stat_dict):
+        stat_dict = {key[7:]: value for key, value in stat_dict.items()}
+    rrl.net.load_state_dict(stat_dict)
     return rrl
 
 
 def test_model(args):
-    rrl = load_model(args.model, args.device_ids[0], log_file=args.test_res, distributed=False)
+    rrl = load_model(args.model, torch.device(args.device), log_file=args.test_res)
     dataset = args.data_set
-    db_enc, train_loader, _, test_loader = get_data_loader(dataset, 4, 0, args.batch_size, args.ith_kfold, save_best=False)
+    db_enc, train_loader, _, test_loader = get_data_loader(
+        dataset, args.batch_size, args.ith_kfold, save_best=False)
     rrl.test(test_loader=test_loader, set_name='Test')
     if args.print_rule:
         with open(args.rrl_file, 'w') as rrl_file:
@@ -157,14 +154,13 @@ def test_model(args):
             edge_cnt += len(rule)
             for rid in rule:
                 connected_rid[ln - abs(rid[0])].add(rid[1])
-    logging.info('\n\t{} of RRL  Model: {}'.format(metric, np.log(edge_cnt)))
+    logging.info('\n\t{} of RRL  Model: {}'.format(
+        metric, np.log(edge_cnt) if edge_cnt else float('-inf')))
 
 
 
 def train_main(args):
-    os.environ['MASTER_ADDR'] = args.master_address
-    os.environ['MASTER_PORT'] = args.master_port
-    mp.spawn(train_model, nprocs=args.gpus, args=(args,))
+    train_model(args)
 
 
 if __name__ == '__main__':

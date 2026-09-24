@@ -102,6 +102,7 @@ class RRL:
         self.alpha =alpha
         self.beta = beta
         self.gamma = gamma
+        self.temperature = temperature
         self.best_f1 = -1.
         self.best_loss = 1e20
 
@@ -122,9 +123,10 @@ class RRL:
         self.writer = writer
 
         self.net = Net(dim_list, use_not=use_not, left=left, right=right, use_nlaf=use_nlaf, estimated_grad=estimated_grad, use_skip=use_skip, alpha=alpha, beta=beta, gamma=gamma, temperature=temperature)
-        self.net.cuda(self.device_id)
+        self.device = torch.device(self.device_id)
+        self.net.to(self.device)
         if distributed:
-            self.net = MyDistributedDataParallel(self.net, device_ids=[self.device_id])
+            self.net = MyDistributedDataParallel(self.net, device_ids=[self.device.index])
 
     def clip(self):
         """Clip the weights into the range [0, 1]."""
@@ -173,7 +175,7 @@ class RRL:
         accuracy_b = []
         f1_score_b = []
 
-        criterion = nn.CrossEntropyLoss().cuda(self.device_id)
+        criterion = nn.CrossEntropyLoss().to(self.device)
         optimizer = torch.optim.Adam(self.net.parameters(), lr=lr, weight_decay=0.0)
 
         cnt = -1
@@ -190,8 +192,8 @@ class RRL:
             ba_cnt = 0
             for X, y in data_loader:
                 ba_cnt += 1
-                X = X.cuda(self.device_id, non_blocking=True)
-                y = y.cuda(self.device_id, non_blocking=True)
+                X = X.to(self.device, non_blocking=True)
+                y = y.to(self.device, non_blocking=True)
                 optimizer.zero_grad()  # Zero the gradient buffers.
                 
                 # trainable softmax temperature
@@ -218,9 +220,11 @@ class RRL:
                 optimizer.step()
                 
                 if self.is_rank0:
-                    for i, param in enumerate(self.net.parameters()):
-                        abs_gradient_max = max(abs_gradient_max, abs(torch.max(param.grad)))
-                        abs_gradient_avg += torch.sum(torch.abs(param.grad)) / (param.grad.numel())
+                    for param in self.net.parameters():
+                        if param.grad is None:
+                            continue
+                        abs_gradient_max = max(abs_gradient_max, torch.max(torch.abs(param.grad)).item())
+                        abs_gradient_avg += torch.mean(torch.abs(param.grad)).item()
                 self.clip()
 
                 if self.is_rank0 and (cnt % (TEST_CNT_MOD * (1 if self.save_best else 10)) == 0):
@@ -258,7 +262,7 @@ class RRL:
         for X, y in test_loader:
             y_list.append(y)
         y_true = torch.cat(y_list, dim=0)
-        y_true = y_true.cpu().numpy().astype(np.int)
+        y_true = y_true.cpu().numpy().astype(int)
         y_true = np.argmax(y_true, axis=1)
         data_num = y_true.shape[0]
 
@@ -267,7 +271,7 @@ class RRL:
 
         y_pred_b_list = []
         for X, y in test_loader:
-            X = X.cuda(self.device_id, non_blocking=True)
+            X = X.to(self.device, non_blocking=True)
             output = self.net.forward(X)
             y_pred_b_list.append(output)
 
@@ -277,30 +281,32 @@ class RRL:
         logging.debug('y_rrl: {} {}'.format(y_pred_b.shape, y_pred_b[:: (slice_step)]))
 
         accuracy_b = metrics.accuracy_score(y_true, y_pred_b_arg)
-        f1_score_b = metrics.f1_score(y_true, y_pred_b_arg, average='macro')
+        f1_score_b = metrics.f1_score(y_true, y_pred_b_arg, average='macro', zero_division=0)
 
         logging.info('-' * 60)
         logging.info('On {} Set:\n\tAccuracy of RRL  Model: {}'
                         '\n\tF1 Score of RRL  Model: {}'.format(set_name, accuracy_b, f1_score_b))
         logging.info('On {} Set:\nPerformance of  RRL Model: \n{}\n{}'.format(
-            set_name, metrics.confusion_matrix(y_true, y_pred_b_arg), metrics.classification_report(y_true, y_pred_b_arg)))
+            set_name, metrics.confusion_matrix(y_true, y_pred_b_arg),
+            metrics.classification_report(y_true, y_pred_b_arg, zero_division=0)))
         logging.info('-' * 60)
 
         return accuracy_b, f1_score_b
 
     def save_model(self):
-        rrl_args = {'dim_list': self.dim_list, 'use_not': self.use_not, 'use_skip': self.use_skip, 'estimated_grad': self.estimated_grad, 
-                    'use_nlaf': self.use_nlaf, 'alpha': self.alpha, 'beta': self.beta, 'gamma': self.gamma}
+        rrl_args = {'dim_list': self.dim_list, 'use_not': self.use_not, 'use_skip': self.use_skip, 'estimated_grad': self.estimated_grad,
+                    'use_nlaf': self.use_nlaf, 'alpha': self.alpha, 'beta': self.beta, 'gamma': self.gamma,
+                    'temperature': self.temperature}
         torch.save({'model_state_dict': self.net.state_dict(), 'rrl_args': rrl_args}, self.save_path)
 
     def detect_dead_node(self, data_loader=None):
         with torch.no_grad():
             for layer in self.net.layer_list[:-1]:
-                layer.node_activation_cnt = torch.zeros(layer.output_dim, dtype=torch.double, device=self.device_id)
+                layer.node_activation_cnt = torch.zeros(layer.output_dim, dtype=torch.double, device=self.device)
                 layer.forward_tot = 0
 
             for x, y in data_loader:
-                x_bar = x.cuda(self.device_id)
+                x_bar = x.to(self.device)
                 self.net.bi_forward(x_bar, count=True)
 
     def rule_print(self, feature_name, label_name, train_loader, file=sys.stdout, mean=None, std=None, display=True):
