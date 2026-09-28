@@ -8,6 +8,7 @@ from experiments.run_abalone import BASE
 from models.manual_glm.ridge import RidgeRegression
 from models.rrl.abalone import fit, predict, prepare, export_rules, predict_rules
 from models.rrl.abalone_refine import refit, predict_refit, graph_with_head, predict_graph, extra_features
+from experiments.abalone_round3 import train_rrl, targets, networks, rf_configs
 
 
 def test_hinge_basis_order_and_continuity():
@@ -57,3 +58,24 @@ def test_ridge_and_regression_export(tmp_path):
         assert np.array_equal(predict(model,state,test),predict(restored,state,test))
     unpenalized = refit(model,state,train,'rules',0.)
     assert np.mean((predict_refit(model,state,train,unpenalized)-train.Rings)**2) <= np.mean((predict(model,state,train)-train.Rings)**2)+1e-8
+    ordinary=refit(model,state,train,'hinge_rules',.1)
+    grouped=refit(model,state,train,'hinge_rules',.1,continuous_alpha=.1)
+    assert np.allclose(predict_refit(model,state,train,ordinary),predict_refit(model,state,train,grouped),atol=1e-7)
+    grouped=refit(model,state,train,'hinge_rules',1.,continuous_alpha=.01)
+    assert np.allclose(predict_refit(model,state,test,grouped),predict_graph(graph_with_head(graph,grouped),test),atol=1e-5)
+
+
+def test_residual_and_early_stop_isolation():
+    torch.set_num_threads(1)
+    frame=load_abalone();train=frame.iloc[:96];valid=frame.iloc[100:120].copy()
+    config=dict(networks()[0],structure='3@4',residual=True,epochs=4,stop_patience=1,monitor_every=1)
+    a,b=targets(train,valid,config)
+    valid['Rings']+=1000
+    changed,_=targets(train,valid,config)
+    assert np.array_equal(a.Rings,changed.Rings)
+    assert np.array_equal(train.Rings,frame.iloc[:96].Rings)
+    model,state,_=train_rrl(train,config,5)
+    assert 1 <= state['selected_epochs'] <= 4
+    head=refit(model,state,train,'hinge_rules',1.,.01)
+    assert np.isfinite(predict_refit(model,state,valid,head)).all()
+    assert len(networks())==37 and len(rf_configs())==72

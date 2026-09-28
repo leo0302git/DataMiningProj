@@ -55,6 +55,8 @@ def cut_points(X, y, count, strategy):
 
 
 def fit(frame, config, seed, validation=None, history=None):
+    if config.get('stop_patience') and validation is None:
+        raise ValueError('Early stopping requires a training-internal validation subset')
     torch.manual_seed(seed)
     X, state = prepare(frame, transform=config.get('transform', 'standard'))
     y = frame.Rings.to_numpy(float)
@@ -77,22 +79,39 @@ def fit(frame, config, seed, validation=None, history=None):
     loader = DataLoader(TensorDataset(torch.from_numpy(X), torch.from_numpy(ys)), batch_size=config.get('batch_size', 128),
                         shuffle=True, generator=torch.Generator().manual_seed(seed))
     loss_fn = torch.nn.MSELoss() if config.get('loss', 'mse') == 'mse' else torch.nn.HuberLoss(delta=config.get('huber_delta', 1.0))
+    best_score, stale, best_weights = float('inf'), 0, None
     for epoch in range(config['epochs']):
         for group in optimizer.param_groups:
             group['lr'] = config['lr'] * config.get('decay', .75)**(epoch//100)
         for xb, yb in loader:
             optimizer.zero_grad()
             loss = loss_fn(model.net(xb).flatten(), yb) + config['wd']*model.l2_penalty()
+            if config.get('edge_lambda', 0):
+                loss = loss + config['edge_lambda']*model.edge_penalty()
             if not torch.isfinite(loss):
                 raise ValueError('Nonfinite training loss')
             loss.backward()
             optimizer.step()
             model.clip()  # Only logical weights are clipped; the output stays unbounded.
-        if history is not None and ((epoch+1) % 20 == 0 or epoch+1 == config['epochs']):
+        if (history is not None or config.get('stop_patience')) and ((epoch+1) % config.get('monitor_every',20) == 0 or epoch+1 == config['epochs']):
             record = dict(epoch=epoch+1, train_rmse=float(np.sqrt(np.mean((predict(model,state,frame)-y)**2))))
             if validation is not None:
                 record['validation_rmse'] = float(np.sqrt(np.mean((predict(model,state,validation)-validation.Rings.to_numpy())**2)))
-            history.append(record)
+            if history is not None:
+                history.append(record)
+            if config.get('stop_patience'):
+                if record['validation_rmse'] < best_score-config.get('min_delta', .001):
+                    best_score = record['validation_rmse']
+                    state['best_epoch'] = epoch+1
+                    best_weights = {k:v.detach().clone() for k,v in model.net.state_dict().items()}
+                    stale = 0
+                else:
+                    stale += 1
+                if stale >= config['stop_patience']:
+                    break
+    if best_weights is not None:
+        model.net.load_state_dict(best_weights)
+        state['epochs_run'] = epoch+1
     return model, state, args
 
 

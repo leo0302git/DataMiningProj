@@ -15,16 +15,23 @@ def representation(model, state, frame):
     return X, values.numpy().astype(float)
 
 
-def refit(model, state, train, kind, alpha):
+def refit(model, state, train, kind, alpha, continuous_alpha=None):
     X, rules = representation(model, state, train)
     knots = model.net.layer_list[0].cl.detach().numpy().tolist() if kind.startswith('hinge') else None
     continuous = extra_features(X,state,knots) if kind != 'rules' else np.empty((len(X),0))
     used_rules = np.empty((len(X),0)) if kind == 'hinge_only' else rules
     features = np.column_stack([used_rules,continuous])
-    head = RidgeRegression(alpha).fit(features, train.Rings.to_numpy(float))
-    return dict(kind=kind, alpha=alpha, bias=float(head.coef_[0]),
-                weights=head.coef_[1:used_rules.shape[1]+1].tolist() if kind != 'hinge_only' else np.zeros(rules.shape[1]).tolist(),
-                linear_weights=head.coef_[used_rules.shape[1]+1:].tolist(),hinge_knots=knots)
+    if continuous_alpha is None:
+        coef = RidgeRegression(alpha).fit(features, train.Rings.to_numpy(float)).coef_
+    else:
+        if min(alpha,continuous_alpha) <= 0:
+            raise ValueError('Grouped penalties must be positive')
+        scale=np.sqrt(np.r_[np.full(used_rules.shape[1],alpha),np.full(continuous.shape[1],continuous_alpha)])
+        coef=RidgeRegression(1.).fit(features/scale,train.Rings.to_numpy(float)).coef_
+        coef[1:] /= scale
+    return dict(kind=kind, alpha=alpha, continuous_alpha=continuous_alpha, bias=float(coef[0]),
+                weights=coef[1:used_rules.shape[1]+1].tolist() if kind != 'hinge_only' else np.zeros(rules.shape[1]).tolist(),
+                linear_weights=coef[used_rules.shape[1]+1:].tolist(),hinge_knots=knots)
 
 
 def extra_features(X, state, knots):
@@ -50,6 +57,7 @@ def graph_with_head(graph, head):
     if head is not None:
         graph.update(weights=head['weights'], bias=head['bias'], linear_weights=head['linear_weights'],
                      head_kind=head['kind'], head_alpha=head['alpha'],hinge_knots=head.get('hinge_knots'))
+        graph['continuous_alpha']=head.get('continuous_alpha')
     return graph
 
 
