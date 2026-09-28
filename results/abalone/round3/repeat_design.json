@@ -1,0 +1,8 @@
+{
+  "split_seeds": [
+    17,
+    42
+  ],
+  "selection": "fixed configurations selected by original mean inner scores only",
+  "purpose": "split stability, not independent confirmation; no configuration updates"
+}

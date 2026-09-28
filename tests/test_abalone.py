@@ -63,6 +63,8 @@ def test_ridge_and_regression_export(tmp_path):
     assert np.allclose(predict_refit(model,state,train,ordinary),predict_refit(model,state,train,grouped),atol=1e-7)
     grouped=refit(model,state,train,'hinge_rules',1.,continuous_alpha=.01)
     assert np.allclose(predict_refit(model,state,test,grouped),predict_graph(graph_with_head(graph,grouped),test),atol=1e-5)
+    pack=dict(members=[graph_with_head(graph,ordinary),graph_with_head(graph,grouped)],aggregation='arithmetic_mean')
+    assert np.allclose(predict_graph(pack,test),(predict_refit(model,state,test,ordinary)+predict_refit(model,state,test,grouped))/2,atol=1e-5)
 
 
 def test_residual_and_early_stop_isolation():

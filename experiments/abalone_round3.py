@@ -18,10 +18,12 @@ from experiments.run_abalone import scores
 from experiments.explore_abalone import frozen, write_json, export
 from models.manual_glm.ridge import RidgeRegression
 from models.rrl.abalone import prepare, fit
-from models.rrl.abalone_refine import extra_features, refit, predict_refit, predict_graph
+from models.rrl.abalone_refine import extra_features, refit, predict_refit, predict_graph, representation
 
 OUT=ROOT/'results/abalone/round3'
 SEEDS=[314,2718]
+REPEAT_DESIGN=dict(split_seeds=[17,42],selection='fixed configurations selected by original mean inner scores only',
+                   purpose='split stability, not independent confirmation; no configuration updates')
 
 
 def networks():
@@ -206,17 +208,23 @@ def evaluate(frame):
             if family=='rf': p=rf_predict(train,test,rf_configs()[cid],42+fold)
             elif family=='smooth': p=smooth(train,test,smooth_configs()[cid])
             else:
-                c=candidates[cid];predictions=[];graphs=[];epochs=[]
+                c=candidates[cid];predictions=[];graphs=[];epochs=[];ablated=[];contributions=[]
                 for m in range(c['members']):
                     model,state,_=train_rrl(train,networks()[c['network']],42+fold+m*10000)
                     head=refit(model,state,train,**heads()[c['head']])
                     predictions.append(predict_refit(model,state,test,head));epochs.append(state['selected_epochs'])
+                    control=refit(model,state,train,'hinge_only',heads()[c['head']]['continuous_alpha'])
+                    ablated.append(predict_refit(model,state,test,control))
+                    _,rules=representation(model,state,test)
+                    contributions.append(rules@np.asarray(head['weights']))
                     graphs.append(export(model,state,train,head,OUT/f'rrl_fold_{fold}_member_{m}'))
                 p=np.mean(predictions,axis=0)
                 error=float(np.max(np.abs(p-np.mean([predict_graph(g,test) for g in graphs],axis=0))))
                 assert error<1e-4
                 write_json(prefix.with_suffix('.json'),dict(members=graphs,aggregation='arithmetic_mean'))
                 metadata.update(export_error=error,epochs=epochs,members=c['members'],
+                    matched_no_rules_rmse=scores(test.Rings.to_numpy(),np.mean(ablated,axis=0))['rmse'],
+                    rule_contribution_std=float(np.std(np.mean(contributions,axis=0))),
                     logical_edges=int(sum(np.sum(l['conjunction'])+np.sum(l['disjunction']) for g in graphs for l in g['layers'])))
             pd.DataFrame(dict(index=test.index,Rings=test.Rings,prediction=p)).to_csv(prefix.with_suffix('.csv'),index=False)
             write_json(OUT/f'{family}_metrics_{fold}.json',dict(**metadata,**scores(test.Rings.to_numpy(),p)))
@@ -238,7 +246,34 @@ def final(frame):
     write_json(OUT/'final_config.json',dict(candidate=cid,network=networks()[c['network']],head=heads()[c['head']],members=c['members']))
 
 
+def repeat(frame):
+    frozen(OUT/'repeat_design.json',REPEAT_DESIGN)
+    c=json.loads((OUT/'final_config.json').read_text())
+    inner=pd.concat([pd.read_csv(OUT/f'inner_{i}.csv') for i in range(5)])
+    rf_id=int(inner[inner.family=='rf'].groupby('candidate').rmse.mean().idxmin())
+    sm_id=int(inner[inner.family=='smooth'].groupby('candidate').rmse.mean().idxmin())
+    frozen(OUT/'repeat_configs.json',dict(rrl=c,rf=rf_configs()[rf_id],smooth=smooth_configs()[sm_id]))
+    path=OUT/'repeated_metrics.csv';rows=pd.read_csv(path).to_dict('records') if path.exists() else []
+    for split_seed in REPEAT_DESIGN['split_seeds']:
+        for fold,(a,b) in enumerate(KFold(5,shuffle=True,random_state=split_seed).split(frame)):
+            train,test=frame.iloc[a],frame.iloc[b];seed=42+fold+split_seed*100
+            for family in ['rf','smooth','rrl']:
+                if any(r['family']==family and r['fold']==fold and r['split_seed']==split_seed for r in rows): continue
+                if family=='rf': p=rf_predict(train,test,rf_configs()[rf_id],seed)
+                elif family=='smooth': p=smooth(train,test,smooth_configs()[sm_id])
+                else:
+                    preds=[]
+                    for m in range(c['members']):
+                        model,state,_=train_rrl(train,c['network'],seed+m*10000)
+                        head=refit(model,state,train,**c['head']);preds.append(predict_refit(model,state,test,head))
+                    p=np.mean(preds,axis=0)
+                pd.DataFrame(dict(index=test.index,Rings=test.Rings,prediction=p)).to_csv(OUT/f'repeat_{split_seed}_{family}_{fold}.csv',index=False)
+                rows.append(dict(family=family,split_seed=split_seed,fold=fold,**scores(test.Rings.to_numpy(),p)))
+                pd.DataFrame(rows).to_csv(path,index=False)
+            print('REPEAT',split_seed,fold,flush=True)
+
+
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['design','rf_develop','rrl_develop','select','evaluate','final'])
+    parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['design','rf_develop','rrl_develop','select','evaluate','final','repeat'])
     args=parser.parse_args();torch.set_num_threads(1);OUT.mkdir(parents=True,exist_ok=True)
     globals()[args.stage](load_abalone())

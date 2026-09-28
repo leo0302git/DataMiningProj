@@ -1,0 +1,58 @@
+{
+  "rrl": [
+    {
+      "network": 4,
+      "head": 4,
+      "members": 2
+    },
+    {
+      "network": 14,
+      "head": 4,
+      "members": 2
+    },
+    {
+      "network": 14,
+      "head": 4,
+      "members": 1
+    },
+    {
+      "network": 4,
+      "head": 4,
+      "members": 1
+    },
+    {
+      "network": 35,
+      "head": 4,
+      "members": 2
+    },
+    {
+      "network": 31,
+      "head": 4,
+      "members": 2
+    },
+    {
+      "network": 35,
+      "head": 4,
+      "members": 1
+    },
+    {
+      "network": 31,
+      "head": 4,
+      "members": 1
+    }
+  ],
+  "rf": [
+    54,
+    4,
+    37,
+    53,
+    45,
+    48
+  ],
+  "smooth": [
+    4,
+    1,
+    10,
+    7
+  ]
+}

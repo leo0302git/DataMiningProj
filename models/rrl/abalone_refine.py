@@ -62,6 +62,10 @@ def graph_with_head(graph, head):
 
 
 def predict_graph(graph, frame):
+    if 'members' in graph:
+        if graph.get('aggregation') != 'arithmetic_mean' or not graph['members']:
+            raise ValueError('Expected a nonempty arithmetic-mean ensemble')
+        return np.mean([predict_graph(member,frame) for member in graph['members']],axis=0)
     output = predict_rules(graph, frame)
     if graph.get('linear_weights'):
         X, _ = prepare(frame, graph['preprocessing'])
