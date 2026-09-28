@@ -1,0 +1,12 @@
+{
+  "samples": 4177,
+  "folds": 5,
+  "rf_development_fits": 144,
+  "rrl_development_rows": 888,
+  "inner_score_rows": 270,
+  "repeated_score_rows": 30,
+  "oof_rule_error": 1.7763568394002505e-15,
+  "rf_retrain_prediction_error": 3.552713678800501e-15,
+  "checkpoint_error": 0.0,
+  "limitation": "Adaptive development with previously observed data, not independent confirmation"
+}

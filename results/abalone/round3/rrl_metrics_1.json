@@ -1,0 +1,20 @@
+{
+  "fold": 1,
+  "candidate": 1,
+  "export_error": 0.0,
+  "epochs": [
+    40,
+    20
+  ],
+  "members": 2,
+  "matched_no_rules_rmse": 2.0815677318704187,
+  "rule_contribution_std": 0.9645944248895936,
+  "logical_edges": 4367,
+  "rmse": 2.073570716877342,
+  "mae": 1.4706742979849232,
+  "r2": 0.5577030184310869,
+  "tail_n": 9,
+  "tail_mae": 8.064106417708727,
+  "bias": -0.08376105701037409,
+  "tail_bias": -8.064106417708727
+}

@@ -14,8 +14,9 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from analysis.eda import load_abalone
 from experiments.abalone_round3 import OUT, networks, heads, rf_configs, smooth_configs, rf_predict, smooth
 from experiments.run_abalone import scores
-from models.rrl.abalone import prepare, RRL
-from models.rrl.abalone_refine import predict_graph, predict_refit
+from models.rrl.abalone import prepare, RRL, predict_rules
+from models.rrl.abalone_refine import predict_graph, predict_refit, extra_features
+from models.manual_glm.ridge import RidgeRegression
 
 
 def main():
@@ -59,6 +60,13 @@ def main():
                     for key in ['features','categories','mean','std','transform']: assert state[key]==g['preprocessing'][key]
                     spec=heads()[c['head']]
                     assert g['head_alpha']==spec['alpha'] and g['continuous_alpha']==spec['continuous_alpha']
+                controls=[]
+                for g in pack['members']:
+                    state=g['preprocessing'];X,_=prepare(frame.iloc[a],state);Xt,_=prepare(frame.iloc[b],state)
+                    basis=extra_features(X,state,g['hinge_knots']);bt=extra_features(Xt,state,g['hinge_knots'])
+                    controls.append(RidgeRegression(g['continuous_alpha']).fit(basis,frame.iloc[a].Rings.to_numpy()).predict(bt))
+                assert np.isclose(scores(frame.iloc[b].Rings.to_numpy(),np.mean(controls,axis=0))['rmse'],row['matched_no_rules_rmse'])
+                assert np.isclose(np.std(np.mean([predict_rules(g,frame.iloc[b]) for g in pack['members']],axis=0)),row['rule_contribution_std'])
                 actual=np.mean([predict_graph(g,frame.iloc[b]) for g in pack['members']],axis=0)
                 error=float(np.max(np.abs(actual-pred.prediction)));rule_error=max(rule_error,error);assert error<1e-4
                 matched.append(dict(fold=fold,rrl_rmse=row['rmse'],without_rules_rmse=row['matched_no_rules_rmse'],
@@ -100,8 +108,35 @@ def main():
         preds.append(predict_refit(model,cp['state'],frame,cp['head']))
     error=float(np.max(np.abs(np.mean(preds,axis=0)-np.mean([predict_graph(g,frame) for g in pack['members']],axis=0))))
     assert error<1e-4
+    repeat_count=0
+    if (OUT/'repeated_metrics.csv').exists():
+        repeated=pd.read_csv(OUT/'repeated_metrics.csv')
+        assert len(repeated)==30
+        repeat_design=json.loads((OUT/'repeat_design.json').read_text())
+        repeat_config=json.loads((OUT/'repeat_configs.json').read_text())
+        assert repeat_config['rrl']==conf
+        for family,pool in [('rf',rf_configs()),('smooth',smooth_configs())]:
+            cid=int(searches[searches.family==family].groupby('candidate').rmse.mean().idxmin())
+            assert repeat_config[family]==pool[cid]
+        for seed in repeat_design['split_seeds']:
+            for family in ['rf','smooth','rrl']:
+                coverage=[]
+                for fold,(_,b) in enumerate(KFold(5,shuffle=True,random_state=seed).split(frame)):
+                    pred=pd.read_csv(OUT/f'repeat_{seed}_{family}_{fold}.csv')
+                    assert np.array_equal(pred['index'],b) and np.array_equal(pred.Rings,frame.iloc[b].Rings)
+                    coverage.extend(pred['index'])
+                    record=repeated[(repeated.split_seed==seed)&(repeated.family==family)&(repeated.fold==fold)]
+                    assert len(record)==1
+                    for key,value in scores(pred.Rings.to_numpy(),pred.prediction.to_numpy()).items():
+                        assert np.isclose(record.iloc[0][key],value)
+                assert sorted(coverage)==list(range(len(frame)))
+        rep_summary=repeated.groupby(['split_seed','family'])[['rmse','mae','r2','tail_mae']].agg(['mean','std'])
+        rep_summary.to_csv(OUT/'repeated_summary.csv');print('REPEATED',rep_summary.round(6).to_string())
+        pivot=repeated.pivot(index=['split_seed','fold'],columns='family',values='rmse')
+        pivot['rrl_minus_rf']=pivot.rrl-pivot.rf;pivot['rrl_minus_smooth']=pivot.rrl-pivot.smooth
+        pivot.to_csv(OUT/'repeated_deltas.csv');repeat_count=len(repeated)
     audit=dict(samples=len(frame),folds=5,rf_development_fits=len(rf),rrl_development_rows=len(pd.read_csv(OUT/'rrl_development.csv')),
-        inner_score_rows=len(searches),oof_rule_error=rule_error,rf_retrain_prediction_error=rf_error,checkpoint_error=error,
+        inner_score_rows=len(searches),repeated_score_rows=repeat_count,oof_rule_error=rule_error,rf_retrain_prediction_error=rf_error,checkpoint_error=error,
         limitation='Adaptive development with previously observed data, not independent confirmation')
     (OUT/'audit.json').write_text(json.dumps(audit,indent=2));print(summary.round(6).to_string());print(audit)
 

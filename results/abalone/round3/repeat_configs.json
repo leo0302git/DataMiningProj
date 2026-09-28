@@ -1,0 +1,39 @@
+{
+  "rrl": {
+    "candidate": 1,
+    "network": {
+      "threshold": "quantile",
+      "structure": "20@128",
+      "lr": 0.002,
+      "wd": 0.0,
+      "alpha": 0.999,
+      "beta": 8,
+      "gamma": 3,
+      "epochs": 320,
+      "loss": "huber",
+      "transform": "log",
+      "use_not": false,
+      "residual": false,
+      "stop_patience": 3,
+      "monitor_every": 10
+    },
+    "head": {
+      "kind": "hinge_rules",
+      "alpha": 0.1,
+      "continuous_alpha": 0.01
+    },
+    "members": 2
+  },
+  "rf": {
+    "n_estimators": 800,
+    "max_depth": null,
+    "min_samples_leaf": 2,
+    "max_features": 0.4,
+    "max_samples": 0.6
+  },
+  "smooth": {
+    "count": 20,
+    "transform": "log",
+    "alpha": 0.01
+  }
+}
