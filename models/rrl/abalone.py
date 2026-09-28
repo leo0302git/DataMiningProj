@@ -54,7 +54,7 @@ def cut_points(X, y, count, strategy):
     return torch.tensor(fallback, dtype=torch.float32)
 
 
-def fit(frame, config, seed):
+def fit(frame, config, seed, validation=None, history=None):
     torch.manual_seed(seed)
     X, state = prepare(frame, transform=config.get('transform', 'standard'))
     y = frame.Rings.to_numpy(float)
@@ -74,12 +74,12 @@ def fit(frame, config, seed):
     # Regression uses one unscaled continuous output; softmax temperature has no role.
     model.net.t.requires_grad_(False)
     optimizer = torch.optim.Adam([p for p in model.net.parameters() if p.requires_grad], lr=config['lr'])
-    loader = DataLoader(TensorDataset(torch.from_numpy(X), torch.from_numpy(ys)), batch_size=128,
+    loader = DataLoader(TensorDataset(torch.from_numpy(X), torch.from_numpy(ys)), batch_size=config.get('batch_size', 128),
                         shuffle=True, generator=torch.Generator().manual_seed(seed))
-    loss_fn = torch.nn.MSELoss() if config.get('loss', 'mse') == 'mse' else torch.nn.HuberLoss(delta=1.0)
+    loss_fn = torch.nn.MSELoss() if config.get('loss', 'mse') == 'mse' else torch.nn.HuberLoss(delta=config.get('huber_delta', 1.0))
     for epoch in range(config['epochs']):
         for group in optimizer.param_groups:
-            group['lr'] = config['lr'] * .75**(epoch//100)
+            group['lr'] = config['lr'] * config.get('decay', .75)**(epoch//100)
         for xb, yb in loader:
             optimizer.zero_grad()
             loss = loss_fn(model.net(xb).flatten(), yb) + config['wd']*model.l2_penalty()
@@ -88,6 +88,11 @@ def fit(frame, config, seed):
             loss.backward()
             optimizer.step()
             model.clip()  # Only logical weights are clipped; the output stays unbounded.
+        if history is not None and ((epoch+1) % 20 == 0 or epoch+1 == config['epochs']):
+            record = dict(epoch=epoch+1, train_rmse=float(np.sqrt(np.mean((predict(model,state,frame)-y)**2))))
+            if validation is not None:
+                record['validation_rmse'] = float(np.sqrt(np.mean((predict(model,state,validation)-validation.Rings.to_numpy())**2)))
+            history.append(record)
     return model, state, args
 
 

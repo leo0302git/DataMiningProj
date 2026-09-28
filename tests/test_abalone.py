@@ -7,6 +7,7 @@ from analysis.eda import load_abalone
 from experiments.run_abalone import BASE
 from models.manual_glm.ridge import RidgeRegression
 from models.rrl.abalone import fit, predict, prepare, export_rules, predict_rules
+from models.rrl.abalone_refine import refit, predict_refit, graph_with_head, predict_graph
 
 
 def test_ridge_and_regression_export(tmp_path):
@@ -39,3 +40,8 @@ def test_ridge_and_regression_export(tmp_path):
     restored = type(model)(**args)
     restored.net.load_state_dict(model.net.state_dict())
     assert np.array_equal(predict(model,state,test),predict(restored,state,test))
+    for kind in ['rules', 'linear_rules']:
+        head = refit(model,state,train,kind,.001)
+        revised = graph_with_head(graph,head)
+        assert np.allclose(predict_refit(model,state,test,head),predict_graph(revised,test),atol=1e-5)
+        assert np.array_equal(predict(model,state,test),predict(restored,state,test))
