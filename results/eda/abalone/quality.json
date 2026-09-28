@@ -1,0 +1,16 @@
+{
+  "samples": 4177,
+  "missing": 0,
+  "nonfinite": 0,
+  "duplicate_rows": 0,
+  "duplicate_inputs": 0,
+  "suspect_union": 7,
+  "flags": {
+    "nonpositive_height": 2,
+    "height_above_length": 1,
+    "meat_above_whole": 4,
+    "shell_above_whole": 1,
+    "viscera_above_whole": 0
+  },
+  "tail_count": 62
+}
