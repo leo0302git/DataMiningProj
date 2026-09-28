@@ -74,6 +74,9 @@ def export(model,state,train,head,path):
         if head.get('hinge_knots') is not None:
             text += '\n连续项还包括 max(X_j-c_jk,0)，按特征再按阈值排列。其阈值采用JSON的hinge_knots标准化坐标，随后列出对应权重。\n'
         text += '\n规则权重：'+json.dumps(head['weights'])+'\n线性直连权重：'+json.dumps(head['linear_weights'])+'\n'
+        if head.get('gates'):
+            text += '\n上式还需加 sum(q_k * R_rule * (X_feature-center)/scale)。仅当该硬规则成立时贡献局部斜率；X使用上述预处理坐标，rule和feature为零起始下标。\n'
+            text += '\n局部斜率项：'+json.dumps(head['gates'])+'\n对应权重：'+json.dumps(head['gate_weights'])+'\n'
         path.with_suffix('.md').write_text(text)
     return graph
 

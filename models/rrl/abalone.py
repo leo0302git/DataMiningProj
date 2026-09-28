@@ -168,7 +168,7 @@ def export_rules(model, state, train, output):
     return graph
 
 
-def predict_rules(graph, frame):
+def predict_rules(graph, frame, return_rules=False):
     """Independent NumPy evaluation of exported JSON, with float32 input semantics."""
     X, state = prepare(frame, graph['preprocessing'])
     ndisc = len(state['categories'])-1
@@ -181,4 +181,4 @@ def predict_rules(graph, frame):
         inputs = np.column_stack([values, ~values]) if layer['use_not'] else values
         con, dis = np.asarray(layer['conjunction']), np.asarray(layer['disjunction'])
         values = np.column_stack([(~inputs).astype(int)@con == 0, inputs.astype(int)@dis > 0])
-    return values@np.asarray(graph['weights']) + graph['bias']
+    return values if return_rules else values@np.asarray(graph['weights']) + graph['bias']

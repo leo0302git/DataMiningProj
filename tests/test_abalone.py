@@ -65,6 +65,29 @@ def test_ridge_and_regression_export(tmp_path):
     assert np.allclose(predict_refit(model,state,test,grouped),predict_graph(graph_with_head(graph,grouped),test),atol=1e-5)
     pack=dict(members=[graph_with_head(graph,ordinary),graph_with_head(graph,grouped)],aggregation='arithmetic_mean')
     assert np.allclose(predict_graph(pack,test),(predict_refit(model,state,test,ordinary)+predict_refit(model,state,test,grouped))/2,atol=1e-5)
+    gated=refit(model,state,train,'hinge_rules',.1,.01,gate_count=8,gate_alpha=.3)
+    assert np.isfinite(predict_refit(model,state,test,gated)).all()  # All-constant rules are allowed.
+    model,state,_=fit(train,dict(BASE,epochs=0,structure='3@2',threshold='quantile'),3)
+    with torch.no_grad():
+        logical=model.net.layer_list[1]
+        logical.con_layer.W.zero_();logical.dis_layer.W.zero_()
+        logical.con_layer.W[2,0]=1.;logical.dis_layer.W[3,0]=1.
+    graph=export_rules(model,state,train,tmp_path/'gated_rules')
+    gated=refit(model,state,train,'hinge_rules',.1,.01,gate_count=8,gate_alpha=.3)
+    assert 0<len(gated['gates'])<=8
+    before=json.dumps(gated,sort_keys=True)
+    assert np.allclose(predict_refit(model,state,test,gated),predict_graph(graph_with_head(graph,gated),test),atol=1e-5)
+    assert json.dumps(gated,sort_keys=True)==before
+    from models.rrl.abalone_refine import representation, gate_features
+    X,rules=representation(model,state,train)
+    gates=gate_features(X,rules,gated['gates'])
+    assert np.allclose(gates.mean(0),0,atol=1e-7) and np.allclose(gates.std(0),1)
+    assert np.array_equal(rules,predict_rules(graph,train,return_rules=True))
+    # Independently solve the grouped normal equations, including the new branch.
+    design=np.column_stack([np.ones(len(train)),rules,extra_features(X,state,gated['hinge_knots']),gates])
+    penalties=np.r_[0,np.full(rules.shape[1],.1),np.full(len(gated['linear_weights']),.01),np.full(gates.shape[1],.3)]
+    coef=np.linalg.solve(design.T@design+len(train)*np.diag(penalties),design.T@train.Rings.to_numpy(float))
+    assert np.allclose(design@coef,predict_refit(model,state,train,gated),atol=1e-7)
 
 
 def test_residual_and_early_stop_isolation():
