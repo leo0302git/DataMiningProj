@@ -1,0 +1,42 @@
+[
+  {
+    "network": 1,
+    "head": 5,
+    "members": 2
+  },
+  {
+    "network": 1,
+    "head": 5,
+    "members": 4
+  },
+  {
+    "network": 1,
+    "head": 14,
+    "members": 4
+  },
+  {
+    "network": 1,
+    "head": 12,
+    "members": 2
+  },
+  {
+    "network": 1,
+    "head": 20,
+    "members": 4
+  },
+  {
+    "network": 1,
+    "head": 20,
+    "members": 2
+  },
+  {
+    "network": 0,
+    "head": 4,
+    "members": 2
+  },
+  {
+    "network": 0,
+    "head": 5,
+    "members": 8
+  }
+]
