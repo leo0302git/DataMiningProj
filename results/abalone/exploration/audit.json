@@ -1,0 +1,9 @@
+{
+  "folds": 5,
+  "samples": 4177,
+  "development_records": 676,
+  "candidates": 10,
+  "oof_max_rule_error": 3.552713678800501e-15,
+  "checkpoint_max_rule_error": 0.0,
+  "caveat": "Adaptive development reused data; no independent confirmation."
+}

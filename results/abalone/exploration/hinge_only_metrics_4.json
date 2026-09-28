@@ -1,0 +1,15 @@
+{
+  "fold": 4,
+  "candidate": 9,
+  "rmse": 2.2465056967114743,
+  "mae": 1.6211923459675461,
+  "r2": 0.5619469907140631,
+  "tail_n": 18,
+  "tail_mae": 6.793386864440205,
+  "bias": -0.04079492550244737,
+  "tail_bias": -6.793386864440205,
+  "export_error": 0.0,
+  "logical_edges": 0,
+  "continuous_terms": 149,
+  "head_kind": "hinge_only"
+}

@@ -1,0 +1,21 @@
+{
+  "candidate": 7,
+  "network": {
+    "threshold": "quantile",
+    "structure": "20@64",
+    "lr": 0.002,
+    "wd": 0.0,
+    "alpha": 0.999,
+    "beta": 8,
+    "gamma": 3,
+    "epochs": 320,
+    "loss": "huber",
+    "transform": "log",
+    "use_not": false
+  },
+  "head": {
+    "kind": "hinge_rules",
+    "alpha": 0.1
+  },
+  "export_error": 0.0
+}

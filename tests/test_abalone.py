@@ -7,7 +7,14 @@ from analysis.eda import load_abalone
 from experiments.run_abalone import BASE
 from models.manual_glm.ridge import RidgeRegression
 from models.rrl.abalone import fit, predict, prepare, export_rules, predict_rules
-from models.rrl.abalone_refine import refit, predict_refit, graph_with_head, predict_graph
+from models.rrl.abalone_refine import refit, predict_refit, graph_with_head, predict_graph, extra_features
+
+
+def test_hinge_basis_order_and_continuity():
+    X = np.array([[0,1,-1],[1,0,.5],[0,0,2]],dtype='float32')
+    basis = extra_features(X,dict(categories=['F','I','M']),[[0.],[1.]])
+    assert np.array_equal(basis[:,:3],X)
+    assert np.array_equal(basis[:,3:],[[0,0],[.5,0],[2,1]])
 
 
 def test_ridge_and_regression_export(tmp_path):

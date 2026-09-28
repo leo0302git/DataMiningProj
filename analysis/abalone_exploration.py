@@ -1,5 +1,6 @@
 """Second-round evidence: development diagnostics, paired comparisons and audit."""
 import json
+import hashlib
 from pathlib import Path
 import sys
 
@@ -37,7 +38,7 @@ def main():
                              refit_rmse=best.rmse,delta=best.rmse-original))
     pd.DataFrame(rows).to_csv(OUT/'head_diagnostics.csv',index=False)
     fig,axes=plt.subplots(2,3,figsize=(13,7),layout='constrained')
-    for ax,nid in zip(axes.flat,[0,3,4,10,12,int(means.iloc[0].network)]):
+    for ax,nid in zip(axes.flat,[0,3,4,9,10,12]):
         for seed in [314,2718]:
             curve=pd.read_json(OUT/f'curve_{nid}_{seed}.json')
             ax.plot(curve.epoch,curve.train_rmse,ls='--',label=f'{seed} train')
@@ -48,6 +49,9 @@ def main():
     if not all((OUT/f'all_metrics_{i}.json').exists() for i in range(5)):
         return
     frame=load_abalone()
+    design=json.loads((OUT/'design.json').read_text())
+    assert design['data_sha256']==hashlib.sha256((ROOT/'data/raw/abalone/abalone.data').read_bytes()).hexdigest()
+    assert design['networks']==networks()
     folds=list(KFold(5,shuffle=True,random_state=0).split(frame))
     selected=json.loads((OUT/'shortlist.json').read_text())
     collected=[]; max_error=0.
@@ -83,7 +87,7 @@ def main():
             collected.append(dict(model=name,**{k:v for k,v in row.items() if k!='config'}))
     metrics=pd.DataFrame(collected)
     metrics.to_csv(OUT/'fold_comparison.csv',index=False)
-    summary=metrics.groupby('model')[['rmse','mae','r2','tail_mae','logical_edges']].agg(['mean','std'])
+    summary=metrics.groupby('model')[['rmse','mae','r2','tail_mae','logical_edges','continuous_terms']].agg(['mean','std'])
     summary.to_csv(OUT/'comparison.csv')
     paired=[]
     for family in ['all','pure','hinge_only']:
@@ -101,6 +105,21 @@ def main():
         ax.set_title(f'{metric.upper()} (adaptive internal evaluation)')
     fig.savefig(OUT/'comparison.png',dpi=160);plt.close(fig)
     checkpoint=torch.load(OUT/'final_model.pth',map_location='cpu',weights_only=False)
+    inner=pd.concat([pd.read_csv(OUT/f'inner_{i}.csv') for i in range(5)])
+    eligible=[i for i,c in enumerate(selected) if all_heads()[c['head']]['kind']!='hinge_only']
+    cid=int(inner.groupby('candidate').rmse.mean().loc[eligible].idxmin())
+    config=json.loads((OUT/'final_config.json').read_text())
+    assert config['candidate']==cid
+    assert config['network']==networks()[selected[cid]['network']]
+    assert config['head']==all_heads()[selected[cid]['head']]
+    if config['head']['kind']=='adam':
+        assert checkpoint['head'] is None
+    else:
+        assert checkpoint['head']['kind']==config['head']['kind']
+        assert checkpoint['head']['alpha']==config['head']['alpha']
+    _,state=prepare(frame,transform=checkpoint['state']['transform'])
+    for key in ['features','categories','mean','std','transform']:
+        assert state[key]==checkpoint['state'][key]
     model=RRL(**checkpoint['rrl_args']);model.net.load_state_dict(checkpoint['model_state_dict'])
     graph=json.loads((OUT/'final_rules.json').read_text())
     err=float(np.max(np.abs(predict_refit(model,checkpoint['state'],frame,checkpoint['head'])-predict_graph(graph,frame))))
