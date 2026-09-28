@@ -1,0 +1,22 @@
+{
+  "fold": 0,
+  "candidate": 6,
+  "members": 2,
+  "epochs": [
+    20,
+    40
+  ],
+  "matched_no_rules_rmse": 2.148104031207449,
+  "matched_no_gates_rmse": 2.13475546908863,
+  "export_error": 0.0,
+  "gate_terms": 0,
+  "logical_edges": 4281,
+  "continuous_terms": 298,
+  "rmse": 2.13475546908863,
+  "mae": 1.5029557580746271,
+  "r2": 0.5803821029836078,
+  "tail_n": 14,
+  "tail_mae": 7.195064569944696,
+  "bias": -0.0363083543089814,
+  "tail_bias": -7.195064569944696
+}

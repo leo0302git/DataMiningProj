@@ -1,0 +1,38 @@
+{
+  "split_seeds": [
+    17,
+    42
+  ],
+  "config": {
+    "candidate": 6,
+    "network": {
+      "threshold": "quantile",
+      "structure": "20@128",
+      "lr": 0.002,
+      "wd": 0.0,
+      "alpha": 0.999,
+      "beta": 8,
+      "gamma": 3,
+      "epochs": 320,
+      "loss": "huber",
+      "transform": "log",
+      "use_not": false,
+      "residual": false,
+      "stop_patience": 3,
+      "monitor_every": 10
+    },
+    "head": {
+      "kind": "hinge_rules",
+      "alpha": 0.1,
+      "continuous_alpha": 0.01
+    },
+    "members": 2,
+    "epochs": [
+      30,
+      30
+    ],
+    "selection": "mean inner RMSE, never outer scores"
+  },
+  "no_retuning": true,
+  "limitation": "Split sensitivity, not independent data"
+}

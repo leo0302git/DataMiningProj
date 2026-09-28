@@ -16,6 +16,9 @@ from experiments.abalone_round4 import OUT, networks, heads, select
 from experiments.run_abalone import scores
 from models.rrl.abalone import prepare, predict_rules, RRL
 from models.rrl.abalone_refine import extra_features, gate_features, predict_graph, predict_refit
+from models.rrl.abalone_refine import refit
+from experiments.abalone_round3 import train_rrl
+from experiments.explore_abalone import export
 
 
 def solve(X,y,penalties):
@@ -72,11 +75,17 @@ def main():
     assert design['data_sha256']==hashlib.sha256((ROOT/'data/raw/abalone/abalone.data').read_bytes()).hexdigest()
     assert design['networks']==networks() and design['heads']==heads()
     assert design['data_sha256']==json.loads((prior/'design.json').read_text())['data_sha256']
+    anchor=candidates.index(dict(network=0,head=4,members=2))
+    previous_candidates=json.loads((prior/'shortlist.json').read_text())['rrl']
+    previous_anchor=previous_candidates.index(dict(network=14,head=4,members=2))
     rows=[];inner=[];coverage=[];error=0.;ablations=[]
     for fold,(a,b) in enumerate(KFold(5,shuffle=True,random_state=0).split(frame)):
         search=pd.read_csv(OUT/f'inner_{fold}.csv');inner.append(search)
         assert len(search)==3*len(candidates) and not search.duplicated(['candidate','inner_fold']).any()
         assert sorted(search.candidate.unique())==list(range(len(candidates))) and sorted(search.inner_fold.unique())==[0,1,2]
+        historical=pd.read_csv(prior/f'inner_{fold}.csv')
+        old=historical[(historical.family=='rrl')&(historical.candidate==previous_anchor)].sort_values('inner_fold')
+        assert np.allclose(search[search.candidate==anchor].sort_values('inner_fold').rmse,old.rmse,atol=1e-10)
         row=json.loads((OUT/f'rrl_metrics_{fold}.json').read_text());cid=int(search.groupby('candidate').rmse.mean().idxmin())
         assert row['candidate']==cid
         p=pd.read_csv(OUT/f'rrl_fold_{fold}.csv');coverage.extend(p['index'])
@@ -98,11 +107,23 @@ def main():
         old=json.loads((ROOT/f'results/abalone/forest/fold_{fold}_metrics.json').read_text())
         rows.append(dict(split_seed=0,family='original_rf',**{k:v for k,v in old.items() if k!='config'}))
     assert sorted(coverage)==list(range(len(frame)))
+    # Winning outer models may contain no gates: explicitly audit the rejected branch too.
+    devtrain=frame.iloc[design['train_indices']];devval=frame.iloc[design['validation_indices']]
+    ranking=pd.read_csv(OUT/'development_ranking.csv');chosen=ranking[ranking.gate_count>0].iloc[0]
+    spec=heads()[int(chosen['head'])]
+    model,state,_=train_rrl(devtrain,networks()[int(chosen.network)],314)
+    head=refit(model,state,devtrain,**spec);graph=export(model,state,devtrain,head,OUT/'gated_development_audit')
+    check_graph(graph,devtrain,devval,spec)
+    assert np.allclose(predict_graph(graph,devval),predict_refit(model,state,devval,head),atol=1e-6)
+    dev=pd.read_csv(OUT/'development.csv')
+    row=dev[(dev.network==chosen.network)&(dev['head']==chosen['head'])&(dev.seed==314)].iloc[0]
+    assert np.isclose(row.rmse,scores(devval.Rings.to_numpy(),predict_graph(graph,devval))['rmse'])
     searches=pd.concat(inner);cid=int(searches.groupby('candidate').rmse.mean().idxmin());c=candidates[cid]
     conf=json.loads((OUT/'final_config.json').read_text())
     assert conf['candidate']==cid and conf['head']==heads()[c['head']] and conf['network']==networks()[c['network']]
     cp=torch.load(OUT/'final_model.pth',map_location='cpu',weights_only=False)
     pack=json.loads((OUT/'final_rules.json').read_text());assert len(cp)==len(pack['members'])==c['members']
+    same_final=pack==json.loads((prior/'final_rules.json').read_text())
     preds=[]
     for checkpoint in cp:
         model=RRL(**checkpoint['rrl_args']);model.net.load_state_dict(checkpoint['model_state_dict'])
@@ -110,14 +131,18 @@ def main():
     checkpoint_error=float(np.max(np.abs(np.mean(preds,axis=0)-predict_graph(pack,frame.drop(columns='Rings')))));assert checkpoint_error<1e-4
     repeat=pd.read_csv(OUT/'repeated_metrics.csv');assert len(repeat)==10 and not repeat.duplicated(['split_seed','fold']).any()
     assert json.loads((OUT/'repeat_design.json').read_text())['config']==conf
+    repeat_difference=0.
     for seed in [17,42]:
         for fold,(_,b) in enumerate(KFold(5,shuffle=True,random_state=seed).split(frame)):
             pred=pd.read_csv(OUT/f'repeat_{seed}_{fold}.csv')
             assert np.array_equal(pred['index'],b) and np.array_equal(pred.Rings,frame.iloc[b].Rings)
+            old=pd.read_csv(prior/f'repeat_{seed}_rrl_{fold}.csv');assert np.array_equal(old['index'],pred['index'])
+            repeat_difference=max(repeat_difference,float(np.max(np.abs(old.prediction-pred.prediction))))
             r=repeat[(repeat.split_seed==seed)&(repeat.fold==fold)].iloc[0].to_dict()
             for key,value in scores(pred.Rings.to_numpy(),pred.prediction.to_numpy()).items(): assert np.isclose(r[key],value)
             rows.append(dict(family='round4_rrl',**r))
     previous=pd.read_csv(prior/'repeated_metrics.csv')
+    if same_final: assert repeat_difference<1e-8
     for r in previous.to_dict('records'): r['family']='round3_'+r['family'];rows.append(r)
     data=pd.DataFrame(rows);data.to_csv(OUT/'fold_comparison.csv',index=False)
     summary=data.groupby(['split_seed','family'])[['rmse','mae','r2','tail_mae']].agg(['mean','std'])
@@ -129,12 +154,14 @@ def main():
     labels=['RF (expanded)','RRL round 3','RRL round 4','No rules']
     for seed,ax in zip([0,17,42],axes):
         part=summary.loc[seed].loc[['round3_rf','round3_rrl','round4_rrl','round3_smooth']]['rmse']
-        ax.bar(labels,part['mean'],yerr=part['std'],capsize=3);ax.set_ylim(1.9,2.35)
-        ax.tick_params(axis='x',rotation=50);ax.set_title(f'Split seed {seed}');ax.set_ylabel('RMSE')
+        ax.errorbar(np.arange(len(labels)),part['mean'],yerr=part['std'],fmt='o',capsize=3)
+        ax.set_xticks(np.arange(len(labels)),labels,rotation=50);ax.set_ylim(1.9,2.35)
+        ax.set_title(f'Split seed {seed}');ax.set_ylabel('RMSE')
     fig.suptitle('Adaptive internal evaluation; mean +/- fold SD (not confidence intervals)')
     fig.savefig(OUT/'comparison.png',dpi=150);plt.close(fig)
     audit=dict(samples=len(frame),development_rows=28*len(heads()),inner_rows=len(searches),repeated_rows=len(repeat),
                rule_error=error,checkpoint_error=checkpoint_error,training_only_gate_selection_verified=True,
+               final_graph_identical_to_round3=same_final,repeat_prediction_difference_from_round3=repeat_difference,
                limitation='Adaptive reused data; not independent or statistically significant evidence')
     (OUT/'audit.json').write_text(json.dumps(audit,indent=2))
     print(summary.round(6).to_string());print('AUDIT',audit);print('FINAL',conf)

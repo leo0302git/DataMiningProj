@@ -94,8 +94,9 @@ def graph_with_head(graph, head):
         graph.update(weights=head['weights'], bias=head['bias'], linear_weights=head['linear_weights'],
                      head_kind=head['kind'], head_alpha=head['alpha'],hinge_knots=head.get('hinge_knots'))
         graph['continuous_alpha']=head.get('continuous_alpha')
-        if 'gates' in head:
-            graph.update({key:head[key] for key in ['gates','gate_weights','gate_alpha','gate_count']})
+        for key in ['gates','gate_weights','gate_alpha','gate_count']:
+            graph.pop(key,None)
+            if key in head: graph[key]=head[key]
     return graph
 
 

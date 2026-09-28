@@ -1,0 +1,12 @@
+{
+  "samples": 4177,
+  "development_rows": 588,
+  "inner_rows": 120,
+  "repeated_rows": 10,
+  "rule_error": 3.552713678800501e-15,
+  "checkpoint_error": 0.0,
+  "training_only_gate_selection_verified": true,
+  "final_graph_identical_to_round3": true,
+  "repeat_prediction_difference_from_round3": 0.0,
+  "limitation": "Adaptive reused data; not independent or statistically significant evidence"
+}

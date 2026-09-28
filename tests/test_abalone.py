@@ -88,6 +88,10 @@ def test_ridge_and_regression_export(tmp_path):
     penalties=np.r_[0,np.full(rules.shape[1],.1),np.full(len(gated['linear_weights']),.01),np.full(gates.shape[1],.3)]
     coef=np.linalg.solve(design.T@design+len(train)*np.diag(penalties),design.T@train.Rings.to_numpy(float))
     assert np.allclose(design@coef,predict_refit(model,state,train,gated),atol=1e-7)
+    plain=refit(model,state,train,'hinge_rules',.1,.01)
+    replaced=graph_with_head(graph_with_head(graph,gated),plain)
+    assert 'gates' not in replaced
+    assert np.allclose(predict_graph(replaced,test),predict_refit(model,state,test,plain),atol=1e-5)
 
 
 def test_residual_and_early_stop_isolation():
