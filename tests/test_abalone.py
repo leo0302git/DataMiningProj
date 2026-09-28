@@ -1,0 +1,41 @@
+import json
+
+import numpy as np
+import torch
+
+from analysis.eda import load_abalone
+from experiments.run_abalone import BASE
+from models.manual_glm.ridge import RidgeRegression
+from models.rrl.abalone import fit, predict, prepare, export_rules, predict_rules
+
+
+def test_ridge_and_regression_export(tmp_path):
+    X = np.arange(20, dtype=float).reshape(-1, 1)
+    y = 2*X[:, 0] + 7
+    assert np.allclose(RidgeRegression().fit(X,y).predict(X), y)
+    regularized = RidgeRegression(1).fit(X,y)
+    assert 0 < regularized.coef_[1] < 2
+
+    torch.set_num_threads(1)
+    frame = load_abalone()
+    train, test = frame.iloc[:96], frame.iloc[100:130].copy()
+    config = dict(BASE, epochs=2, structure='3@4@3', use_not=True, threshold='supervised')
+    original,_,_ = fit(train,dict(BASE,epochs=0),3)
+    paired,_,_ = fit(train,dict(BASE,epochs=0,threshold='quantile',match_random_init=True),3)
+    for (_,a),(_,b) in zip(original.net.named_parameters(),paired.net.named_parameters()):
+        assert torch.equal(a,b)
+    model,state,args = fit(train,config,3)
+    assert np.isclose(state['y_mean'],train.Rings.mean())
+    before = json.dumps(state,sort_keys=True)
+    test['Rings'] = 1000
+    test['Length'] *= 100
+    prepare(test,state)
+    assert json.dumps(state,sort_keys=True) == before
+    assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model.net.parameters())
+    graph = export_rules(model,state,train,tmp_path/'rules')
+    graph = json.loads((tmp_path/'rules.json').read_text())
+    assert np.allclose(predict(model,state,test),predict_rules(graph,test),atol=1e-5)
+    assert np.allclose(predict(model,state,test),predict(model,state,test,hard=True),atol=1e-5)
+    restored = type(model)(**args)
+    restored.net.load_state_dict(model.net.state_dict())
+    assert np.array_equal(predict(model,state,test),predict(restored,state,test))

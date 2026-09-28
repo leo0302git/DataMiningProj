@@ -1,0 +1,29 @@
+{
+  "fold": 2,
+  "train_n": 3342,
+  "rmse": 2.2611421630855832,
+  "mae": 1.648432731628418,
+  "r2": 0.4948856234550476,
+  "tail_n": 11,
+  "tail_mae": 8.199413299560547,
+  "bias": 0.2685324314825549,
+  "tail_bias": -8.19941251928156,
+  "config": {
+    "threshold": "random",
+    "structure": "5@16",
+    "lr": 0.002,
+    "wd": 0.001,
+    "alpha": 0.9,
+    "beta": 3,
+    "gamma": 3,
+    "epochs": 100,
+    "loss": "mse",
+    "transform": "standard",
+    "use_not": false
+  },
+  "rule_nodes": 32,
+  "logical_edges": 30,
+  "log_edges": 3.4011973816621555,
+  "hard_max_error": 0.0,
+  "exported_max_error": 7.003545761108398e-07
+}

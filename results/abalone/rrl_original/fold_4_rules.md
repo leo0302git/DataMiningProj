@@ -1,0 +1,71 @@
+# 回归 RRL 规则图
+
+Support 是训练样本激活比例。JSON 保存完整精度，本文数字仅供阅读。
+
+L1R0: Sex=I; Support=0.325554
+L1R1: Height <= 0.1499908; Support=0.547277
+L1R2: TRUE; Support=1.000000
+L1R3: Sex=I AND Viscera weight <= 0.15039995; Support=0.267205
+L1R4: Shell weight <= 0.25535216; Support=0.567923
+L1R5: TRUE; Support=1.000000
+L1R6: TRUE; Support=1.000000
+L1R7: Shell weight > 0.27132516 AND Shucked weight <= 0.72461883; Support=0.335129
+L1R8: Shell weight <= 0.25535216; Support=0.567923
+L1R9: Shell weight > 0.25535216 AND Shell weight > 0.46756803; Support=0.059246
+L1R10: TRUE; Support=1.000000
+L1R11: TRUE; Support=1.000000
+L1R12: Viscera weight > 0.011660631 AND Length <= 0.56939912 AND Shucked weight <= 0.3727706 AND Shucked weight <= 0.54312931; Support=0.510473
+L1R13: TRUE; Support=1.000000
+L1R14: TRUE; Support=1.000000
+L1R15: TRUE; Support=1.000000
+L1R16: FALSE; Support=0.000000
+L1R17: FALSE; Support=0.000000
+L1R18: Shucked weight > 0.5669928 OR Diameter <= 0.33248363 OR Shell weight <= 0.27132516; Support=0.774087
+L1R19: FALSE; Support=0.000000
+L1R20: FALSE; Support=0.000000
+L1R21: Height > 0.17409663 OR Whole weight > 1.137623; Support=0.288151
+L1R22: FALSE; Support=0.000000
+L1R23: Shucked weight > 0.49664286 OR Whole weight <= 0.58559214 OR Shell weight <= 0.27132516; Support=0.846200
+L1R24: Height > 0.18218914 OR Shucked weight <= 0.3727706; Support=0.669958
+L1R25: Shell weight > 0.13049807; Support=0.744464
+L1R26: Shell weight > 0.25535216; Support=0.432077
+L1R27: FALSE; Support=0.000000
+L1R28: FALSE; Support=0.000000
+L1R29: Shell weight > 0.37771535; Support=0.150209
+L1R30: FALSE; Support=0.000000
+L1R31: FALSE; Support=0.000000
+
+Rings = 9.93358231 + sum(weight_j * rule_j)
+
+L1R0: -0.595201075 Rings
+L1R1: -0.349651456 Rings
+L1R2: 0.0335532017 Rings
+L1R3: -1.12780499 Rings
+L1R4: -0.162202522 Rings
+L1R5: -0.275030643 Rings
+L1R6: -0.0845987201 Rings
+L1R7: 0.155608132 Rings
+L1R8: -0.532531977 Rings
+L1R9: 0.808621407 Rings
+L1R10: -0.0714547113 Rings
+L1R11: -0.0416824371 Rings
+L1R12: 0.878961861 Rings
+L1R13: -0.122987151 Rings
+L1R14: 0.0155357206 Rings
+L1R15: -0.0605754294 Rings
+L1R16: -3.71582314e-40 Rings
+L1R17: -1.68197855e-41 Rings
+L1R18: -1.23180759 Rings
+L1R19: 5.23522304e-40 Rings
+L1R20: -1.27522364e-39 Rings
+L1R21: 0.924572527 Rings
+L1R22: -2.72639432e-40 Rings
+L1R23: -0.695940733 Rings
+L1R24: 0.671923876 Rings
+L1R25: 0.39445594 Rings
+L1R26: 0.891969025 Rings
+L1R27: 8.34641391e-41 Rings
+L1R28: 1.71370394e-40 Rings
+L1R29: 1.48199999 Rings
+L1R30: 1.23655986e-38 Rings
+L1R31: 0.0369654968 Rings
