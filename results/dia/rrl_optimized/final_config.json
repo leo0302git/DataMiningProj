@@ -1,0 +1,20 @@
+{
+  "config_id": 27,
+  "config": {
+    "threshold": "random",
+    "structure": "5@32",
+    "learning_rate": 0.005,
+    "weight_decay": 0.0,
+    "weighted": false,
+    "alpha": 0.999,
+    "beta": 8,
+    "gamma": 3,
+    "epochs": 160,
+    "temperature": 1.0,
+    "use_not": false
+  },
+  "mean_inner_pr_auc": 0.63976062484,
+  "std_inner_pr_auc": 0.03381558165894649,
+  "rule_count": 55,
+  "edge_count": 1345
+}

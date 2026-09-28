@@ -1,6 +1,7 @@
 """Create final DIA comparison tables and figures from saved fold outputs."""
 
 from pathlib import Path
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,13 +20,14 @@ MODEL_NAMES = {
     'random_forest': 'Random forest',
     'rrl_original': 'Original RRL',
     'rrl_quantile': 'Quantile RRL',
+    'rrl_optimized': 'Optimized RRL',
 }
 
 
 def load_fold_metrics():
     baseline = pd.read_csv(RESULTS / 'baselines' / 'fold_metrics.csv')
     frames = [baseline]
-    for model in ('rrl_original', 'rrl_quantile'):
+    for model in ('rrl_original', 'rrl_quantile', 'rrl_optimized'):
         frame = pd.read_csv(RESULTS / model / 'fold_metrics.csv')
         frame.insert(0, 'model', model)
         frames.append(frame)
@@ -57,7 +59,7 @@ def main():
     for ax, metric, title in zip(axes, ('pr_auc', 'macro_f1'), ('PR-AUC', 'Macro-F1')):
         values = summary[summary.metric == metric].set_index('model').loc[models]
         ax.bar(MODEL_NAMES.values(), values['mean'], yerr=values['std'], capsize=4,
-               color=['#4C78A8', '#F58518', '#54A24B', '#E45756'])
+               color=['#4C78A8', '#F58518', '#54A24B', '#E45756', '#B279A2'])
         ax.set_ylim(0, 1)
         ax.set_title(f'{title} (5-fold mean +/- SD)')
         ax.tick_params(axis='x', rotation=20)
@@ -93,6 +95,47 @@ def main():
         METRICS + ['edge_count', 'log_edges']]
     differences.loc['mean'] = differences.mean()
     differences.to_csv(RESULTS / 'rrl_ablation.csv', float_format='%.10g')
+
+    search_files = sorted((RESULTS / 'rrl_optimized').glob('fold_*_search.csv'))
+    searches = pd.concat([pd.read_csv(path) for path in search_files], ignore_index=True)
+    parameters = searches['config'].map(json.loads).apply(pd.Series)
+    expanded = pd.concat([searches.drop(columns='config'), parameters], axis=1)
+    ranking = expanded.groupby('config_id').agg(
+        mean_inner_pr_auc=('mean_inner_pr_auc', 'mean'),
+        std_across_outer_folds=('mean_inner_pr_auc', 'std'),
+    ).sort_values('mean_inner_pr_auc', ascending=False)
+    ranking = ranking.join(expanded.groupby('config_id').first()[parameters.columns])
+    ranking.to_csv(RESULTS / 'rrl_optimized' / 'search_ranking.csv',
+                   float_format='%.10g')
+
+    effects = []
+    for parameter in parameters.columns:
+        for value, group in expanded.groupby(parameter):
+            effects.append({
+                'parameter': parameter,
+                'value': value,
+                'mean_inner_pr_auc': group['mean_inner_pr_auc'].mean(),
+                'std': group['mean_inner_pr_auc'].std(),
+                'count': len(group),
+            })
+    pd.DataFrame(effects).to_csv(
+        RESULTS / 'rrl_optimized' / 'search_effects.csv',
+        index=False, float_format='%.10g')
+
+    rrl_models = ['rrl_original', 'rrl_quantile', 'rrl_optimized']
+    rrl_folds = folds[folds.model.isin(rrl_models)]
+    fig, ax = plt.subplots(figsize=(6.5, 4.5))
+    for model in rrl_models:
+        group = rrl_folds[rrl_folds.model == model]
+        ax.errorbar(group.log_edges.mean(), group.pr_auc.mean(),
+                    xerr=group.log_edges.std(), yerr=group.pr_auc.std(),
+                    marker='o', capsize=4, label=MODEL_NAMES[model])
+    ax.set(xlabel='log(#edges)', ylabel='PR-AUC',
+           title='RRL performance-complexity trade-off')
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(RESULTS / 'rrl_tradeoff.png', dpi=180)
+    plt.close(fig)
 
 
 if __name__ == '__main__':

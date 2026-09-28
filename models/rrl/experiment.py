@@ -105,7 +105,11 @@ def train_model(args):
         lr_decay_rate=args.lr_decay_rate,
         lr_decay_epoch=args.lr_decay_epoch,
         weight_decay=args.weight_decay,
-        log_iter=args.log_iter)
+        log_iter=args.log_iter,
+        class_weights=(
+            len(train_loader.dataset) /
+            (2 * np.bincount(train_loader.dataset.tensors[1].numpy().argmax(axis=1)))
+            if args.weighted else None))
 
 
 def load_model(path, device, log_file=None, distributed=False):

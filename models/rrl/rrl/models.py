@@ -167,7 +167,8 @@ class RRL:
         return optimizer
 
     def train_model(self, data_loader=None, valid_loader=None, epoch=50, lr=0.01, lr_decay_epoch=100, 
-                    lr_decay_rate=0.75, weight_decay=0.0, log_iter=50):
+                    lr_decay_rate=0.75, weight_decay=0.0, log_iter=50,
+                    class_weights=None):
 
         if data_loader is None:
             raise Exception("Data loader is unavailable!")
@@ -175,7 +176,9 @@ class RRL:
         accuracy_b = []
         f1_score_b = []
 
-        criterion = nn.CrossEntropyLoss().to(self.device)
+        weight = None if class_weights is None else torch.as_tensor(
+            class_weights, dtype=torch.float32, device=self.device)
+        criterion = nn.CrossEntropyLoss(weight=weight).to(self.device)
         optimizer = torch.optim.Adam(self.net.parameters(), lr=lr, weight_decay=0.0)
 
         cnt = -1

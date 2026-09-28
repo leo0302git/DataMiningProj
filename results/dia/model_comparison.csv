@@ -31,3 +31,11 @@ rrl_quantile,positive_recall,0.4666666667,0.16728581
 rrl_quantile,positive_f1,0.4798466979,0.08153256836
 rrl_quantile,roc_auc,0.7539813308,0.05241384207
 rrl_quantile,pr_auc,0.6072583509,0.06116390233
+rrl_optimized,accuracy,0.8275210084,0.02903191082
+rrl_optimized,balanced_accuracy,0.7316884067,0.03896413485
+rrl_optimized,macro_f1,0.7490507824,0.04106982154
+rrl_optimized,positive_precision,0.6959486166,0.0659558148
+rrl_optimized,positive_recall,0.5413793104,0.06256717886
+rrl_optimized,positive_f1,0.6087405257,0.06347993029
+rrl_optimized,roc_auc,0.8429865542,0.01835410118
+rrl_optimized,pr_auc,0.7040393014,0.07255264484
