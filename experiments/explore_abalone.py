@@ -209,7 +209,8 @@ def evaluate(frame):
             assert err<1e-4
             pd.DataFrame(dict(index=test.index,Rings=test.Rings,prediction=pred)).to_csv(prefix.with_suffix('.csv'),index=False)
             write_json(OUT/f'{family}_metrics_{fold}.json',dict(fold=fold,candidate=cid,**scores(test.Rings.to_numpy(),pred),
-                export_error=err,logical_edges=int(sum(np.sum(g['conjunction'])+np.sum(g['disjunction']) for g in graph['layers'])),
+                export_error=err,logical_edges=0 if family=='hinge_only' else int(sum(np.sum(g['conjunction'])+np.sum(g['disjunction']) for g in graph['layers'])),
+                continuous_terms=len(head['linear_weights']) if head is not None else 0,
                 head_kind=all_heads()[c['head']]['kind']))
             print('OUTER',family,fold,scores(test.Rings.to_numpy(),pred)['rmse'],flush=True)
 

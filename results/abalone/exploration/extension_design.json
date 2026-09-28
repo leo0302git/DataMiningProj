@@ -1,0 +1,51 @@
+{
+  "network_ids": [
+    0,
+    9,
+    10
+  ],
+  "heads": [
+    {
+      "kind": "hinge_rules",
+      "alpha": 0.0001
+    },
+    {
+      "kind": "hinge_rules",
+      "alpha": 0.001
+    },
+    {
+      "kind": "hinge_rules",
+      "alpha": 0.01
+    },
+    {
+      "kind": "hinge_rules",
+      "alpha": 0.1
+    },
+    {
+      "kind": "hinge_rules",
+      "alpha": 1.0
+    },
+    {
+      "kind": "hinge_only",
+      "alpha": 0.0001
+    },
+    {
+      "kind": "hinge_only",
+      "alpha": 0.001
+    },
+    {
+      "kind": "hinge_only",
+      "alpha": 0.01
+    },
+    {
+      "kind": "hinge_only",
+      "alpha": 0.1
+    },
+    {
+      "kind": "hinge_only",
+      "alpha": 1.0
+    }
+  ],
+  "reason": "Observed benefit of continuous skip motivates piecewise-linear terms; additive-only control included",
+  "status": "adaptive extension after initial development, before extension results"
+}

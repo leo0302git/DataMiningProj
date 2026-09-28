@@ -1,0 +1,22 @@
+[
+  {
+    "epoch": 20,
+    "train_rmse": 2.175335737381613,
+    "validation_rmse": 2.2384967175053316
+  },
+  {
+    "epoch": 40,
+    "train_rmse": 2.099430660141945,
+    "validation_rmse": 2.2233331167773946
+  },
+  {
+    "epoch": 60,
+    "train_rmse": 2.074293775592598,
+    "validation_rmse": 2.242294435102342
+  },
+  {
+    "epoch": 80,
+    "train_rmse": 2.0844661021937143,
+    "validation_rmse": 2.276188617748542
+  }
+]
