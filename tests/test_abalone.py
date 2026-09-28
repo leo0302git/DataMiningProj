@@ -25,7 +25,10 @@ def test_ridge_and_regression_export(tmp_path):
     paired,_,_ = fit(train,dict(BASE,epochs=0,threshold='quantile',match_random_init=True),3)
     for (_,a),(_,b) in zip(original.net.named_parameters(),paired.net.named_parameters()):
         assert torch.equal(a,b)
-    model,state,args = fit(train,config,3)
+    history = []
+    model,state,args = fit(train,config,3,validation=test,history=history)
+    assert history[-1]['epoch'] == 2
+    assert np.isfinite(history[-1]['validation_rmse'])
     assert np.isclose(state['y_mean'],train.Rings.mean())
     before = json.dumps(state,sort_keys=True)
     test['Rings'] = 1000
@@ -40,8 +43,10 @@ def test_ridge_and_regression_export(tmp_path):
     restored = type(model)(**args)
     restored.net.load_state_dict(model.net.state_dict())
     assert np.array_equal(predict(model,state,test),predict(restored,state,test))
-    for kind in ['rules', 'linear_rules']:
+    for kind in ['rules', 'linear_rules', 'hinge_rules', 'hinge_only']:
         head = refit(model,state,train,kind,.001)
         revised = graph_with_head(graph,head)
         assert np.allclose(predict_refit(model,state,test,head),predict_graph(revised,test),atol=1e-5)
         assert np.array_equal(predict(model,state,test),predict(restored,state,test))
+    unpenalized = refit(model,state,train,'rules',0.)
+    assert np.mean((predict_refit(model,state,train,unpenalized)-train.Rings)**2) <= np.mean((predict(model,state,train)-train.Rings)**2)+1e-8

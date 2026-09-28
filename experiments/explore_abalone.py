@@ -45,6 +45,10 @@ def heads():
         for kind in ['rules','linear_rules'] for a in [1e-5,.0001,.001,.01,.1]]
 
 
+def all_heads():
+    return heads()+[dict(kind=kind,alpha=a) for kind in ['hinge_rules','hinge_only'] for a in [.0001,.001,.01,.1,1.]]
+
+
 def write_json(path, value):
     path.write_text(json.dumps(value,indent=2))
 
@@ -67,6 +71,8 @@ def export(model,state,train,head,path):
         text=path.with_suffix('.md').read_text().split('\nRings =')[0]
         text += f'\n\nRings = {head["bias"]:.10g} + sum(w_j * final_rule_j) + sum(v_k * X_k)\n'
         text += '\n固定规则后在训练集重拟合输出层；X顺序为非基准Sex独热列、预处理后的连续输入。log版先log1p再标准化。JSON为全精度可执行解释。\n'
+        if head.get('hinge_knots') is not None:
+            text += '\n连续项还包括 max(X_j-c_jk,0)，按特征再按阈值排列。其阈值采用JSON的hinge_knots标准化坐标，随后列出对应权重。\n'
         text += '\n规则权重：'+json.dumps(head['weights'])+'\n线性直连权重：'+json.dumps(head['linear_weights'])+'\n'
         path.with_suffix('.md').write_text(text)
     return graph
@@ -116,14 +122,44 @@ def develop(frame):
         write_json(OUT/'development_baselines.json',rows)
 
 
+def extend(frame):
+    dev=pd.read_csv(OUT/'development.csv')
+    assert len(dev)==len(networks())*2*len(heads())
+    best=dev[dev.kind=='linear_rules'].groupby(['network','head']).rmse.mean().sort_values().reset_index()
+    ids=sorted(set([0]+best.drop_duplicates('network').head(2).network.astype(int).tolist()))
+    frozen(OUT/'extension_design.json',dict(network_ids=ids,heads=all_heads()[len(heads()):],
+        reason='Observed benefit of continuous skip motivates piecewise-linear terms; additive-only control included',
+        status='adaptive extension after initial development, before extension results'))
+    design=json.loads((OUT/'design.json').read_text())
+    train=frame.iloc[design['train_indices']];val=frame.iloc[design['validation_indices']]
+    path=OUT/'extension.csv'
+    rows=pd.read_csv(path).to_dict('records') if path.exists() else []
+    for nid in ids:
+        for seed in [314,2718]:
+            if any(r['network']==nid and r['seed']==seed for r in rows):
+                assert sum(r['network']==nid and r['seed']==seed for r in rows)==10
+                continue
+            model,state,_=fit(train,networks()[nid],seed)
+            for hid in range(len(heads()),len(all_heads())):
+                spec=all_heads()[hid];head=get_head(model,state,train,spec)
+                pred=predict_refit(model,state,val,head)
+                rows.append(dict(network=nid,head=hid,seed=seed,kind=spec['kind'],alpha=spec['alpha'],
+                    **scores(val.Rings.to_numpy(),pred),train_rmse=scores(train.Rings.to_numpy(),predict_refit(model,state,train,head))['rmse']))
+            pd.DataFrame(rows).to_csv(path,index=False)
+            print('EXTENSION',nid,seed,'best',min(r['rmse'] for r in rows[-10:]),flush=True)
+
+
 def shortlist():
     rows=pd.read_csv(OUT/'development.csv')
     assert len(rows)==len(networks())*2*len(heads())
+    extra=pd.read_csv(OUT/'extension.csv')
+    assert len(extra)==len(json.loads((OUT/'extension_design.json').read_text())['network_ids'])*2*10
+    rows=pd.concat([rows,extra],ignore_index=True)
     ranking=rows.groupby(['network','head','kind']).agg(rmse=('rmse','mean'),seed_std=('rmse','std'),
             train_rmse=('train_rmse','mean')).reset_index().sort_values(['rmse','network','head'])
     ranking.to_csv(OUT/'development_ranking.csv',index=False)
     selected=[]
-    for kind in ['adam','rules','linear_rules']:
+    for kind in ['adam','rules','linear_rules','hinge_rules','hinge_only']:
         # Preserve two distinct network structures/configurations per family.
         for row in ranking[ranking.kind==kind].drop_duplicates('network').head(2).itertuples():
             selected.append(dict(network=int(row.network),head=int(row.head)))
@@ -150,22 +186,23 @@ def evaluate(frame):
                 for cid in ids:
                     if cid in done:
                         continue
-                    head=get_head(model,state,train.iloc[a],heads()[selected[cid]['head']])
+                    head=get_head(model,state,train.iloc[a],all_heads()[selected[cid]['head']])
                     pred=predict_refit(model,state,train.iloc[b],head)
                     rows.append(dict(candidate=cid,inner_fold=k,**scores(train.iloc[b].Rings.to_numpy(),pred)))
                 pd.DataFrame(rows).to_csv(path,index=False)
                 print('INNER',fold,k,nid,flush=True)
         means=pd.DataFrame(rows).groupby('candidate').rmse.mean()
         # Also report a separately selected pure-rule RRL, avoiding hybrid-only claims.
-        families={'all':list(range(len(selected))),
-                  'pure':[i for i,c in enumerate(selected) if heads()[c['head']]['kind']!='linear_rules']}
+        families={'all':[i for i,c in enumerate(selected) if all_heads()[c['head']]['kind']!='hinge_only'],
+                  'pure':[i for i,c in enumerate(selected) if all_heads()[c['head']]['kind'] in ['adam','rules']],
+                  'hinge_only':[i for i,c in enumerate(selected) if all_heads()[c['head']]['kind']=='hinge_only']}
         for family,ids in families.items():
             prefix=OUT/f'{family}_fold_{fold}'
             if prefix.with_suffix('.csv').exists():
                 continue
             cid=int(means.loc[ids].idxmin()); c=selected[cid]
             model,state,args=fit(train,networks()[c['network']],42+fold)
-            head=get_head(model,state,train,heads()[c['head']])
+            head=get_head(model,state,train,all_heads()[c['head']])
             pred=predict_refit(model,state,test,head)
             graph=export(model,state,train,head,prefix)
             err=float(np.max(np.abs(pred-predict_graph(graph,test))))
@@ -173,28 +210,29 @@ def evaluate(frame):
             pd.DataFrame(dict(index=test.index,Rings=test.Rings,prediction=pred)).to_csv(prefix.with_suffix('.csv'),index=False)
             write_json(OUT/f'{family}_metrics_{fold}.json',dict(fold=fold,candidate=cid,**scores(test.Rings.to_numpy(),pred),
                 export_error=err,logical_edges=int(sum(np.sum(g['conjunction'])+np.sum(g['disjunction']) for g in graph['layers'])),
-                head_kind=heads()[c['head']]['kind']))
+                head_kind=all_heads()[c['head']]['kind']))
             print('OUTER',family,fold,scores(test.Rings.to_numpy(),pred)['rmse'],flush=True)
 
 
 def final(frame):
     selected=shortlist()
     records=pd.concat([pd.read_csv(OUT/f'inner_{i}.csv') for i in range(5)])
-    cid=int(records.groupby('candidate').rmse.mean().idxmin()); c=selected[cid]
+    eligible=[i for i,c in enumerate(selected) if all_heads()[c['head']]['kind']!='hinge_only']
+    cid=int(records.groupby('candidate').rmse.mean().loc[eligible].idxmin()); c=selected[cid]
     model,state,args=fit(frame,networks()[c['network']],2026)
-    head=get_head(model,state,frame,heads()[c['head']])
+    head=get_head(model,state,frame,all_heads()[c['head']])
     graph=export(model,state,frame,head,OUT/'final_rules')
     err=float(np.max(np.abs(predict_refit(model,state,frame,head)-predict_graph(graph,frame))))
     assert err<1e-4
     torch.save(dict(model_state_dict=model.net.state_dict(),state=state,rrl_args=args,head=head),OUT/'final_model.pth')
-    write_json(OUT/'final_config.json',dict(candidate=cid,network=networks()[c['network']],head=heads()[c['head']],export_error=err))
+    write_json(OUT/'final_config.json',dict(candidate=cid,network=networks()[c['network']],head=all_heads()[c['head']],export_error=err))
     print('FINAL',cid,err,flush=True)
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('stage',choices=['develop','evaluate','final'])
+    parser.add_argument('stage',choices=['develop','extend','evaluate','final'])
     args=parser.parse_args()
     torch.set_num_threads(1)
     OUT.mkdir(parents=True,exist_ok=True)
-    {'develop':develop,'evaluate':evaluate,'final':final}[args.stage](load_abalone())
+    {'develop':develop,'extend':extend,'evaluate':evaluate,'final':final}[args.stage](load_abalone())
