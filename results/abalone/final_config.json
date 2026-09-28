@@ -1,0 +1,18 @@
+{
+  "config_id": 14,
+  "config": {
+    "threshold": "quantile",
+    "structure": "10@32",
+    "lr": 0.002,
+    "wd": 0.0,
+    "alpha": 0.999,
+    "beta": 8,
+    "gamma": 3,
+    "epochs": 80,
+    "loss": "huber",
+    "transform": "log",
+    "use_not": false
+  },
+  "mean_inner_rmse": 2.300874463175193,
+  "exported_max_error": 1.2647360563278198e-06
+}

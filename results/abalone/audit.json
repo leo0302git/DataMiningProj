@@ -1,0 +1,21 @@
+{
+  "models": 8,
+  "folds_each": 5,
+  "samples_each": 4177,
+  "inner_fits": 360,
+  "oof_max_rule_error": 1.6136878731032311e-06,
+  "final_checkpoint_rule_error": 1.2647360563278198e-06,
+  "verified": [
+    "data_hash",
+    "fold_indices",
+    "coverage",
+    "labels",
+    "metrics",
+    "training_preprocessing",
+    "search_configurations",
+    "inner_selection",
+    "final_selection",
+    "independent_rules",
+    "checkpoint_reload"
+  ]
+}
