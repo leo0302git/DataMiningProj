@@ -1,0 +1,135 @@
+# 回归 RRL 规则图
+
+Support 是训练样本激活比例。JSON 保存完整精度，本文数字仅供阅读。
+
+L1R0: Diameter <= 0.37579644 AND Height <= 0.1202328 AND Viscera weight <= 0.13420577; Support=0.280156
+L1R1: Diameter > 0.37579644 AND Shell weight > 0.16728145 AND Shucked weight <= 0.51912872; Support=0.401377
+L1R2: TRUE; Support=1.000000
+L1R3: Diameter > 0.32983409 AND Shell weight > 0.16728145 AND Shucked weight <= 0.71226575; Support=0.596229
+L1R4: Shucked weight > 0.23398249 AND Shucked weight > 0.46602242 AND Height <= 0.19829826; Support=0.252918
+L1R5: TRUE; Support=1.000000
+L1R6: Length > 0.26828903; Support=0.967375
+L1R7: Length > 0.33758433; Support=0.914696
+L1R8: Sex=I; Support=0.326549
+L1R9: Sex=I AND Whole weight <= 0.41503721 AND Viscera weight <= 0.12498177; Support=0.173301
+L1R10: Shell weight <= 0.22473896; Support=0.484885
+L1R11: Shucked weight > 0.23398249 AND Shell weight <= 0.492626; Support=0.629153
+L1R12: TRUE; Support=1.000000
+L1R13: Height <= 0.11913688 AND Height <= 0.16957135 AND Height <= 0.089372597; Support=0.102963
+L1R14: Height <= 0.16957135 AND Whole weight <= 1.1986524; Support=0.709967
+L1R15: Diameter > 0.29782501 AND Height > 0.092900814 AND Shucked weight <= 0.47782728; Support=0.552230
+L1R16: Whole weight <= 1.1986524 AND Shell weight <= 0.27960215; Support=0.632445
+L1R17: Shell weight <= 0.22473896; Support=0.484885
+L1R18: TRUE; Support=1.000000
+L1R19: Height > 0.089372597 AND Shell weight > 0.4133303; Support=0.100868
+L1R20: TRUE; Support=1.000000
+L1R21: Length > 0.26828903; Support=0.967375
+L1R22: Height > 0.12000089 AND Length <= 0.54240218; Support=0.189464
+L1R23: Shucked weight > 0.20702338 AND Whole weight <= 1.3715199 AND Shell weight <= 0.4133303; Support=0.566896
+L1R24: TRUE; Support=1.000000
+L1R25: Sex=I AND Viscera weight <= 0.13420577 AND Shell weight <= 0.27851856; Support=0.249925
+L1R26: Height > 0.089372597 AND Viscera weight <= 0.21654179; Support=0.551931
+L1R27: Shell weight <= 0.4133303; Support=0.899132
+L1R28: TRUE; Support=1.000000
+L1R29: Shell weight > 0.057259091 AND Length <= 0.52069411; Support=0.354385
+L1R30: Shucked weight > 0.46602242 AND Shell weight <= 0.492626; Support=0.258605
+L1R31: Length > 0.33758433 AND Whole weight > 1.1986524 AND Shucked weight <= 0.71226575; Support=0.161030
+L1R32: FALSE; Support=0.000000
+L1R33: Shell weight > 0.22051854; Support=0.519904
+L1R34: Shell weight > 0.27851856; Support=0.365759
+L1R35: FALSE; Support=0.000000
+L1R36: FALSE; Support=0.000000
+L1R37: FALSE; Support=0.000000
+L1R38: FALSE; Support=0.000000
+L1R39: Shucked weight > 0.51912872 OR Whole weight <= 0.41503721 OR Shell weight <= 0.16728145; Support=0.572284
+L1R40: Length <= 0.33758433 OR Shell weight <= 0.13167194 OR Shell weight <= 0.076256613; Support=0.256510
+L1R41: Whole weight > 1.1986524 OR Shell weight > 0.27851856 OR Shucked weight <= 0.23398249; Support=0.698593
+L1R42: FALSE; Support=0.000000
+L1R43: Shell weight > 0.4133303 OR Length <= 0.54240218 OR Shucked weight <= 0.20136786; Support=0.601317
+L1R44: Viscera weight > 0.1202035 OR Shell weight > 0.057259091; Support=0.914098
+L1R45: FALSE; Support=0.000000
+L1R46: FALSE; Support=0.000000
+L1R47: FALSE; Support=0.000000
+L1R48: Shell weight <= 0.057259091; Support=0.085902
+L1R49: FALSE; Support=0.000000
+L1R50: Shucked weight > 0.06786526 OR Shell weight > 0.27851856; Support=0.925471
+L1R51: Shucked weight > 0.71226575 OR Length <= 0.26828903; Support=0.089793
+L1R52: FALSE; Support=0.000000
+L1R53: Height > 0.16957135 OR Whole weight > 1.3715199; Support=0.255013
+L1R54: FALSE; Support=0.000000
+L1R55: Shell weight > 0.492626; Support=0.040108
+L1R56: FALSE; Support=0.000000
+L1R57: FALSE; Support=0.000000
+L1R58: FALSE; Support=0.000000
+L1R59: Sex=I OR Shucked weight > 0.47782728 OR Height <= 0.096646131; Support=0.632445
+L1R60: Height > 0.19829826 OR Shell weight > 0.16728145; Support=0.655193
+L1R61: Shucked weight > 0.50669718 OR Shucked weight > 0.46602242 OR Height <= 0.096646131 OR Shell weight <= 0.27851856 OR Shell weight <= 0.16728145; Support=0.894942
+L1R62: FALSE; Support=0.000000
+L1R63: Shucked weight > 0.47782728 OR Length <= 0.33758433 OR Shell weight <= 0.27960215; Support=0.887160
+
+Rings = 9.5520649 + sum(weight_j * rule_j)
+
+L1R0: -0.512507439 Rings
+L1R1: 0.466259152 Rings
+L1R2: 0.170288011 Rings
+L1R3: 0.230937988 Rings
+L1R4: -0.229722157 Rings
+L1R5: 0.0773175806 Rings
+L1R6: 0.318988651 Rings
+L1R7: 0.0881979018 Rings
+L1R8: -0.155141145 Rings
+L1R9: -0.508138239 Rings
+L1R10: -0.320179015 Rings
+L1R11: -0.320265889 Rings
+L1R12: 0.0521282852 Rings
+L1R13: -0.392808408 Rings
+L1R14: -0.519268095 Rings
+L1R15: 0.452943981 Rings
+L1R16: -0.272723138 Rings
+L1R17: -0.149244741 Rings
+L1R18: 0.120063752 Rings
+L1R19: 0.867307484 Rings
+L1R20: 0.130228385 Rings
+L1R21: 0.201121613 Rings
+L1R22: 0.266749859 Rings
+L1R23: -0.330866545 Rings
+L1R24: -0.0966068953 Rings
+L1R25: -0.491221726 Rings
+L1R26: 0.194388151 Rings
+L1R27: -0.132009953 Rings
+L1R28: 0.0411894806 Rings
+L1R29: 0.182824984 Rings
+L1R30: -0.430962324 Rings
+L1R31: 0.490767479 Rings
+L1R32: -0.00840808358 Rings
+L1R33: 0.541940749 Rings
+L1R34: 0.109457582 Rings
+L1R35: -9.02762854e-39 Rings
+L1R36: -2.79616637e-39 Rings
+L1R37: -3.64733888e-39 Rings
+L1R38: -9.45789443e-39 Rings
+L1R39: -0.197024271 Rings
+L1R40: -0.471407384 Rings
+L1R41: 0.8602314 Rings
+L1R42: 2.08908097e-39 Rings
+L1R43: 0.408166885 Rings
+L1R44: 0.0788162053 Rings
+L1R45: -6.26654788e-39 Rings
+L1R46: -0.0518335067 Rings
+L1R47: 0.00653815642 Rings
+L1R48: -0.401707798 Rings
+L1R49: -0.0191813018 Rings
+L1R50: 0.0552779771 Rings
+L1R51: -0.415648013 Rings
+L1R52: 1.30902543e-37 Rings
+L1R53: 0.211825207 Rings
+L1R54: 1.73084552e-37 Rings
+L1R55: 0.436831474 Rings
+L1R56: 7.44918633e-39 Rings
+L1R57: -0.0144320074 Rings
+L1R58: 1.10076787e-38 Rings
+L1R59: -0.203012422 Rings
+L1R60: 0.399490386 Rings
+L1R61: -0.31986174 Rings
+L1R62: -0.0292770211 Rings
+L1R63: -0.311894804 Rings
