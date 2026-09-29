@@ -1,0 +1,5 @@
+stage,records,network_fits,epochs,seconds,seconds_complete
+dev,24,48,2300,66.73992958099916,True
+inner,360,720,35080,900.4337643260078,True
+outer,60,120,5420,224.23276641599477,True
+final,1,2,90,5.745955041999878,True

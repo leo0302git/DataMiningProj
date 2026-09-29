@@ -1,0 +1,24 @@
+{
+  "candidate": 11,
+  "config": {
+    "threshold": "quantile",
+    "structure": "20@128",
+    "lr": 0.002,
+    "wd": 0.0,
+    "alpha": 0.999,
+    "beta": 8,
+    "gamma": 3,
+    "epochs": 320,
+    "loss": "huber",
+    "transform": "log",
+    "use_not": false,
+    "paired_init": true,
+    "init_literals": 0,
+    "full_categories": false,
+    "rule_head_alpha": 0.1,
+    "stop_patience": 3,
+    "monitor_every": 10,
+    "min_delta": 0.001,
+    "monitor_rules": true
+  }
+}
