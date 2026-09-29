@@ -1,0 +1,107 @@
+{
+  "date": "2026-09-29",
+  "purpose": "新一轮纯 RRL 的训练内机制诊断与历史开发证据；本文件生成没有训练模型。",
+  "scope": "各旧规则图只在其所属外层训练折上计算激活、重复和矛盾；开发趋势来自旧开发划分。外层 RMSE 仅抄录既有评价，不重新读取测试目标做诊断。",
+  "data_sha256": "de37cdcdcaaa50c309d514f248f7c2302a5f1f88c168905eba23fe2fbc78449f",
+  "sources": {
+    "data": "data/raw/abalone/abalone.data",
+    "design": "results/abalone/exploration/design.json",
+    "shortlist": "results/abalone/exploration/shortlist.json",
+    "development": "results/abalone/exploration/development.csv",
+    "development_summary": "results/abalone/exploration/development_summary.csv",
+    "head_diagnostics": "results/abalone/exploration/head_diagnostics.csv",
+    "graph_pattern": "results/abalone/exploration/pure_fold_{fold}.json",
+    "metrics_pattern": "results/abalone/exploration/pure_metrics_{fold}.json",
+    "curve_pattern": "results/abalone/exploration/curve_{network}_{seed}.json",
+    "experiment": "experiments/explore_abalone.py",
+    "graph_semantics": "models/rrl/abalone.py:predict_rules"
+  },
+  "source_sha256": {
+    "results/abalone/exploration/design.json": "213520ef7d20917813bebb0862204f9a9901bd40bef79f70d447b2c5c683ed56",
+    "results/abalone/exploration/shortlist.json": "1cac2954e32a2f9bab7f954f889f7da65e3e99e2c8c1ff7fe13267126c1f9cae",
+    "results/abalone/exploration/development.csv": "3adb61a09fcf1297fbffc8f5d7cf72f44ebca0472201570e18a88f859a47cc6c",
+    "results/abalone/exploration/development_summary.csv": "8f6f19c837e1d4ace5d8ac0f5b98fbcec2a5a4647c9aaeb7244caa19b15b5170",
+    "results/abalone/exploration/head_diagnostics.csv": "a19124d86695ac0e72a702e6a66103054603560078c9ab05d3ff5073f46f074a",
+    "results/abalone/exploration/pure_fold_0.json": "74f66687f54c2910f27641737e4586e7d5d10e17f9bc2f57897e61cc8b2d59b1",
+    "results/abalone/exploration/pure_fold_1.json": "6213cebca437f37fdd00170ef8c2d4a96ee54ecf14dbeb5211286ee1280b766d",
+    "results/abalone/exploration/pure_fold_2.json": "18fb2df92c770c748e875829ebe0ca0aaf4fece8a7843270979f01862faeadfe",
+    "results/abalone/exploration/pure_fold_3.json": "9e17502440ec9e305ac90e39191dace781c7ebb3984d58db23f0e3957be16246",
+    "results/abalone/exploration/pure_fold_4.json": "3e707b8e59c5917b7a72a51df30f86204a8fd52fa31ea9e9f70075164c0e6a95"
+  },
+  "diagnostic_method": {
+    "split": {"type": "KFold", "n_splits": 5, "shuffle": true, "random_state": 0, "fold_numbering": "zero_based"},
+    "preprocessing": "使用每份 graph 内保存的训练折参数；Sex 按旧 drop-first F/I/M 编码，数值按 graph 的 log1p、均值、标准差变换后转 float32；阈值转 float32。",
+    "conditions": "按 I/M、逐特征逐阈值的大于条件、其补集排列。",
+    "logical_values": "conjunction: ((~inputs).astype(int) @ con == 0); disjunction: (inputs.astype(int) @ dis > 0)。",
+    "duplicate_patterns": "np.unique(values, axis=1)；重复余数=总列数-不同列模式数，包括常量列。此处相同仅指训练样本激活，不代表逻辑全局等价。",
+    "constant_rules": "训练支持度精确为0或1；不把近似常量混入。",
+    "near_extreme_nonconstant_rules": "0<support<0.01 或 0.99<support<1。",
+    "condition_extremes": "support<0.01 或 support>0.99。",
+    "contradictory_numeric_conjunction": "第一逻辑层每个AND选取的同特征条件形成 x>max(lower) 且 x<=min(upper)，任一 max(lower)>=min(upper) 则结构性矛盾。",
+    "tautological_numeric_disjunction": "第一逻辑层每个OR存在同特征 x>lower 或 x<=upper，且 lower<=upper，则结构性恒真。",
+    "length": "节点选中的硬逻辑连接数，未删除同特征重复阈值，故不等于逻辑化简后的条件数。"
+  },
+  "legacy_networks": {
+    "common": {"threshold": "quantile", "lr": 0.002, "wd": 0.0, "alpha": 0.999, "beta": 8, "gamma": 3, "epochs": 320, "loss": "huber", "transform": "log", "use_not": false},
+    "9": {"structure": "20@64"},
+    "10": {"structure": "20@128"},
+    "common_head": {"kind": "rules", "alpha": 0.1}
+  },
+  "folds": [
+    {"fold": 0, "train_n": 3341, "legacy_candidate": 3, "network": 10, "head": 5, "historical_rmse": 2.275182093774328, "condition_count": 282, "distinct_condition_patterns": 282, "extreme_conditions": 0, "duplicated_thresholds": {}, "rules": 256, "always_true": 0, "always_false": 57, "distinct_nonconstant_patterns": 198, "distinct_all_patterns": 199, "duplicate_pattern_excess": 57, "logical_edges": 4156, "mean_length": 16.234375, "median_length": 18.0, "max_length": 36, "empty_rules": 29, "single_condition_rules": 6, "near_extreme_nonconstant_rules": 30, "numeric_contradictory_and": 25, "sex_contradictory_and": 0, "numeric_tautological_or": 0},
+    {"fold": 1, "train_n": 3341, "legacy_candidate": 3, "network": 10, "head": 5, "historical_rmse": 2.2354482716706494, "condition_count": 282, "distinct_condition_patterns": 280, "extreme_conditions": 0, "duplicated_thresholds": {"Height": 1}, "rules": 256, "always_true": 0, "always_false": 65, "distinct_nonconstant_patterns": 191, "distinct_all_patterns": 192, "duplicate_pattern_excess": 64, "logical_edges": 3835, "mean_length": 14.98046875, "median_length": 16.5, "max_length": 34, "empty_rules": 43, "single_condition_rules": 4, "near_extreme_nonconstant_rules": 36, "numeric_contradictory_and": 19, "sex_contradictory_and": 0, "numeric_tautological_or": 0},
+    {"fold": 2, "train_n": 3342, "legacy_candidate": 3, "network": 10, "head": 5, "historical_rmse": 2.198791874805914, "condition_count": 282, "distinct_condition_patterns": 280, "extreme_conditions": 0, "duplicated_thresholds": {}, "rules": 256, "always_true": 0, "always_false": 58, "distinct_nonconstant_patterns": 196, "distinct_all_patterns": 197, "duplicate_pattern_excess": 59, "logical_edges": 4257, "mean_length": 16.62890625, "median_length": 18.0, "max_length": 36, "empty_rules": 35, "single_condition_rules": 1, "near_extreme_nonconstant_rules": 38, "numeric_contradictory_and": 17, "sex_contradictory_and": 0, "numeric_tautological_or": 0},
+    {"fold": 3, "train_n": 3342, "legacy_candidate": 3, "network": 10, "head": 5, "historical_rmse": 2.215480930433741, "condition_count": 282, "distinct_condition_patterns": 282, "extreme_conditions": 0, "duplicated_thresholds": {}, "rules": 256, "always_true": 0, "always_false": 54, "distinct_nonconstant_patterns": 200, "distinct_all_patterns": 201, "duplicate_pattern_excess": 55, "logical_edges": 4265, "mean_length": 16.66015625, "median_length": 18.0, "max_length": 33, "empty_rules": 27, "single_condition_rules": 3, "near_extreme_nonconstant_rules": 31, "numeric_contradictory_and": 23, "sex_contradictory_and": 0, "numeric_tautological_or": 0},
+    {"fold": 4, "train_n": 3342, "legacy_candidate": 2, "network": 9, "head": 5, "historical_rmse": 2.362262284746783, "condition_count": 282, "distinct_condition_patterns": 280, "extreme_conditions": 0, "duplicated_thresholds": {"Height": 1}, "rules": 128, "always_true": 0, "always_false": 8, "distinct_nonconstant_patterns": 120, "distinct_all_patterns": 121, "duplicate_pattern_excess": 7, "logical_edges": 2355, "mean_length": 18.3984375, "median_length": 19.0, "max_length": 31, "empty_rules": 5, "single_condition_rules": 2, "near_extreme_nonconstant_rules": 5, "numeric_contradictory_and": 3, "sex_contradictory_and": 0, "numeric_tautological_or": 0}
+  ],
+  "development": {
+    "train_n": 2672,
+    "validation_n": 669,
+    "indices_source": "results/abalone/exploration/design.json:train_indices,validation_indices",
+    "seeds": [314, 2718],
+    "best_rules_head_by_network": [
+      {"network": 9, "alpha": 0.1, "rmse_mean": 2.1518960593, "train_rmse_mean": 2.0020565623, "rmse_seed_sample_std": 0.006139},
+      {"network": 10, "alpha": 0.1, "rmse_mean": 2.1531695589, "train_rmse_mean": 1.9411683486, "rmse_seed_sample_std": 0.007434}
+    ],
+    "regularization_trend": [
+      {"network": 9, "alpha": 0.00001, "rmse_mean": 2.2857881079, "train_rmse_mean": 1.7034999529},
+      {"network": 9, "alpha": 0.0001, "rmse_mean": 2.2838816431, "train_rmse_mean": 1.7035428222},
+      {"network": 9, "alpha": 0.001, "rmse_mean": 2.2683633995, "train_rmse_mean": 1.7061981892},
+      {"network": 9, "alpha": 0.01, "rmse_mean": 2.2034919091, "train_rmse_mean": 1.7545787942},
+      {"network": 9, "alpha": 0.1, "rmse_mean": 2.1518960593, "train_rmse_mean": 2.0020565623},
+      {"network": 10, "alpha": 0.00001, "rmse_mean": 2.4027820440, "train_rmse_mean": 1.4740558799},
+      {"network": 10, "alpha": 0.0001, "rmse_mean": 2.3983323845, "train_rmse_mean": 1.4741968589},
+      {"network": 10, "alpha": 0.001, "rmse_mean": 2.3625522625, "train_rmse_mean": 1.4805423177},
+      {"network": 10, "alpha": 0.01, "rmse_mean": 2.2313783872, "train_rmse_mean": 1.5797363337},
+      {"network": 10, "alpha": 0.1, "rmse_mean": 2.1531695589, "train_rmse_mean": 1.9411683486}
+    ],
+    "curve_monitor": "历史曲线监控原 Adam 输出头，不能直接当作 rules-only 重拟合头的最佳轮数。",
+    "curves": [
+      {"network": 9, "seed": 314, "best_epoch": 20, "best_validation_rmse": 2.139628724758494, "best_train_rmse": 2.0754935191722828, "last_epoch": 320, "last_validation_rmse": 2.2611576256617885, "last_train_rmse": 1.7449985591750572},
+      {"network": 9, "seed": 2718, "best_epoch": 60, "best_validation_rmse": 2.1079770044002193, "best_train_rmse": 1.9203593982661857, "last_epoch": 320, "last_validation_rmse": 2.236425693600636, "last_train_rmse": 1.7720502061037353},
+      {"network": 10, "seed": 314, "best_epoch": 40, "best_validation_rmse": 2.113384467540863, "best_train_rmse": 1.9920917472119626, "last_epoch": 320, "last_validation_rmse": 2.409251967528431, "last_train_rmse": 1.5589057566274294},
+      {"network": 10, "seed": 2718, "best_epoch": 60, "best_validation_rmse": 2.1487848500967375, "best_train_rmse": 1.9447686560723394, "last_epoch": 320, "last_validation_rmse": 2.2961606172866404, "last_train_rmse": 1.6375803487612957}
+    ]
+  },
+  "runtime": {
+    "source": "development.csv 的 kind=adam/head=0 首个头记录；包含320轮训练和小量预测/表示诊断，非纯训练计时。",
+    "train_n": 2672,
+    "torch_num_threads": 1,
+    "measurements": [
+      {"network": 9, "seed": 314, "epochs": 320, "seconds": 8.37822575},
+      {"network": 9, "seed": 2718, "epochs": 320, "seconds": 8.451507834},
+      {"network": 10, "seed": 314, "epochs": 320, "seconds": 11.463120625},
+      {"network": 10, "seed": 2718, "epochs": 320, "seconds": 11.655904958}
+    ],
+    "estimate_20_at_64_80_epochs_seconds": 2.1,
+    "estimate_method": "历史20@64两次320轮耗时除以4，四舍五入；新规则头逐次重拟合监控、并发负载和不同训练集大小会增加或改变耗时，不能视为承诺。"
+  },
+  "interpretation": [
+    "条件层覆盖整体充分：没有极端激活，只存在少量Height重复切点；本轮可以暂缓新的监督阈值算法。",
+    "逻辑层存在可定位的结构性矛盾、空OR、长规则与训练激活重复，支持短规则初始化的匹配实验，不代表初始化改动已经有效。",
+    "更宽结构并未在旧开发集提高纯规则重拟合性能；20@64可作为较小锚点。",
+    "旧Adam曲线训练误差继续下降、验证误差回升，支持按最终rules头监控的内部早停对照。",
+    "旧规则头alpha最优值达到搜索上界0.1，支持增加一个alpha=1的有界对照；不能提前断言更强正则化有效。",
+    "训练折诊断与已有外层结果都属于同一数据上的自适应内部证据；本轮不构成独立外部确认。"
+  ]
+}
