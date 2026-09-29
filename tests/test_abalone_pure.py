@@ -12,6 +12,28 @@ from models.rrl.abalone import fit, prepare, predict, export_rules, predict_rule
 from models.rrl.abalone_refine import refit, predict_refit, graph_with_head, predict_graph
 
 
+def test_driver_stopping_is_nested_inside_current_training_set(monkeypatch):
+    from experiments import abalone_pure_rrl as driver
+    train, _ = samples()
+    calls = []
+    original = driver.fit
+
+    def traced(frame, config, seed, validation=None, history=None):
+        result = original(frame, config, seed, validation, history)
+        calls.append((set(frame.index), set(validation.index) if validation is not None else set(), config, result[1]))
+        return result
+
+    monkeypatch.setattr(driver, 'fit', traced)
+    config = dict(driver.candidates()[0]['config'], structure='3@4', epochs=4, monitor_every=1)
+    _, _, _, head, trace = driver.train_model(train, config, 314)
+    proper, stop, _, state = calls[0]
+    assert not proper & stop and proper | stop == set(train.index)
+    assert calls[1][0] == set(train.index) and not calls[1][1]
+    assert calls[1][2]['epochs'] == state['best_epoch'] == trace['selected_epoch']
+    assert not calls[1][2].get('stop_patience')
+    assert head['kind'] == 'rules' and not head['linear_weights']
+
+
 def samples():
     frame = load_abalone().sample(n=240, random_state=731)
     return frame.iloc[:192].copy(), frame.iloc[192:].copy()

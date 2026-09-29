@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "data_sha256": "de37cdcdcaaa50c309d514f248f7c2302a5f1f88c168905eba23fe2fbc78449f",
+  "verified_sources": {
+    "models/rrl/abalone.py": "74553a2874bf22203112c1e37a048fb9fe7b829314ab82d0a57c62223959ceac",
+    "models/rrl/abalone_refine.py": "33cc5ef690baefe7487ef18d4055fc70fdc07858efab3fbeed2761db950e49e6",
+    "models/rrl/rrl/components.py": "6209facdd8426d45435e4462c7f30093f5de1b888d88bbb49a31eda76ac4d0e3",
+    "models/rrl/rrl/models.py": "86acd855f4bf66979f858f0eb1b0e2b71f06207f5f7a1e9ad32a9136fbef60cb",
+    "models/manual_glm/ridge.py": "a6cbc8d6ad88ad9f488aa43f19b75615953f456d826ed8b71816eb047279914f",
+    "experiments/explore_abalone.py": "1b72fd8dd7c5a4a9ca3e03c1ec6e5dfd970aa38fbbfbd8e847173b6ce37824fe",
+    "experiments/abalone_pure_rrl.py": "5832aa8b0f1bfc6d1667a56d1e0c100cb19b10453a209e8881627c1c548bc634"
+  },
+  "inner_trials": 270,
+  "outer_trials": 34,
+  "outer_selected_candidates": [
+    0,
+    0,
+    1,
+    0,
+    3
+  ],
+  "final_candidate": 0,
+  "final_seed": 314,
+  "final_mean_inner_rmse": 2.2056564318970118,
+  "max_outer_graph_prediction_error": 1.7763568394002505e-15,
+  "final_reload_graph_error": 0.0,
+  "historical_reported_max_reproduction_error": 1.7763568394002505e-15,
+  "limitation": "adaptive internal evaluation on repeatedly studied data, not independent confirmation"
+}
