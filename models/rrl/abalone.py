@@ -6,6 +6,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+from sklearn.tree import DecisionTreeRegressor
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -40,7 +41,7 @@ def prepare(frame, state=None, transform='standard', full_categories=False):
     return np.column_stack([discrete, values]).astype('float32'), state
 
 
-def cut_points(X, y, count, strategy):
+def cut_points(X, y, count, strategy, tree_min_leaf=.02):
     if strategy == 'random':
         return None
     fallback = np.quantile(X, np.arange(1, count+1)/(count+1), axis=0)
@@ -74,12 +75,69 @@ def cut_points(X, y, count, strategy):
         fallback.sort(axis=0)
         if not np.isfinite(fallback).all():
             raise ValueError('Local supervised thresholds must be finite')
+    elif strategy == 'tree':
+        # Recursive SSE splits use only the supplied training targets. If a
+        # feature supplies fewer splits, fill evenly across its remaining unique
+        # quantiles (stratum midpoints), then repeat quantiles only if necessary
+        # to retain the exact input budget, e.g. for constant features.
+        for j in range(X.shape[1]):
+            tree = DecisionTreeRegressor(criterion='squared_error', max_leaf_nodes=count+1,
+                                         min_samples_leaf=tree_min_leaf, random_state=0)
+            tree.fit(X[:, j:j+1], y)
+            choices = np.unique(tree.tree_.threshold[tree.tree_.children_left != -1]).tolist()
+            remaining = np.asarray([c for c in np.unique(fallback[:, j]) if c not in choices])
+            needed = count-len(choices)
+            if len(remaining) > needed:
+                positions = ((np.arange(needed)+.5)*len(remaining)/needed).astype(int) if needed else []
+                remaining = remaining[positions]
+            choices += remaining.tolist()
+            choices += fallback[:, j].tolist()
+            fallback[:, j] = sorted(choices[:count])
     elif strategy != 'quantile':
         raise ValueError(strategy)
     return torch.tensor(fallback, dtype=torch.float32)
 
 
-def initialize_paired(model, state, seed, literals=0):
+@torch.no_grad()
+def project_fanin(model, maximum):
+    """Keep at most maximum hard inputs per node, without freezing soft gates."""
+    if maximum is None:
+        return
+    if isinstance(maximum, bool) or not isinstance(maximum, (int, np.integer)) or maximum <= 0:
+        raise ValueError('max_fanin must be a positive integer or None')
+    for layer in model.net.layer_list[1:-1]:
+        for part in (layer.con_layer, layer.dis_layer):
+            weights = part.W
+            if maximum >= weights.shape[0] or not torch.any((weights > .5).sum(0) > maximum):
+                continue
+            keep = torch.zeros_like(weights, dtype=torch.bool)
+            # Stable sorting breaks equal-weight ties by input-row order.
+            keep.scatter_(0, weights.argsort(dim=0, descending=True, stable=True)[:maximum], True)
+            excess = (weights > .5) & ~keep
+            # Zero has zero NLAF gradient when beta > 1; demoted edges must
+            # remain positive and free to re-enter on a later optimizer step.
+            weights[excess] = torch.nextafter(weights.new_tensor(.5), weights.new_tensor(0.))
+
+
+@torch.no_grad()
+def rule_diagnostics(model, X):
+    """Training-only complexity and empirical diversity, not logical equivalence."""
+    values = model.net.layer_list[0].binarized_forward(torch.from_numpy(X))
+    edges, largest = 0, 0
+    for layer in model.net.layer_list[1:-1]:
+        values = layer.binarized_forward(values)
+        for part in (layer.con_layer, layer.dis_layer):
+            degrees = (part.W > .5).sum(0)
+            edges += int(degrees.sum())
+            largest = max(largest, int(degrees.max()))
+    active = values.numpy().astype(bool)
+    nonconstant = active.any(0) & ~active.all(0)
+    return dict(hard_edges=edges, max_fanin_observed=largest,
+                nonconstant_rules=int(nonconstant.sum()),
+                distinct_nonconstant_rules=int(np.unique(active[:, nonconstant], axis=1).shape[1]))
+
+
+def initialize_paired(model, state, seed, literals=0, max_fanin=None):
     """Pair common input rows and output weights, independently of global RNG.
 
     Short rules choose from the shared drop-first vocabulary. A full-only Sex
@@ -130,6 +188,7 @@ def initialize_paired(model, state, seed, literals=0):
                     rows = list(choices.values())[group_id]
                     row = rows[torch.randint(len(rows), (1,), generator=rng).item()]
                     layer.W[row, node] = .55 + .2*torch.rand((), generator=rng)
+    project_fanin(model, max_fanin)
     state['initial_gates'] = dict(
         inputs=names, shared_drop_first=True,
         conjunction=[torch.nonzero(logical.con_layer.W[:, j].detach() > .5).flatten().tolist()
@@ -163,9 +222,13 @@ def fit(frame, config, seed, validation=None, history=None):
     # so changing thresholds does not also change the initial logical/output weights.
     if config.get('match_random_init', False) and config['threshold'] != 'random':
         torch.randn(widths[0], X.shape[1]-ndisc)
-    model = RRL(**args, cut_points=cut_points(X[:, ndisc:], y, widths[0], config['threshold']))
+    model = RRL(**args, cut_points=cut_points(X[:, ndisc:], y, widths[0], config['threshold'],
+                                           config.get('tree_min_leaf', .02)))
     if config.get('paired_init', False) or config.get('init_literals', 0):
-        initialize_paired(model, state, seed, config.get('init_literals', 0))
+        initialize_paired(model, state, seed, config.get('init_literals', 0), config.get('max_fanin'))
+    project_fanin(model, config.get('max_fanin'))
+    if config.get('max_fanin') is not None:
+        state['max_fanin'] = int(config['max_fanin'])
     # Regression uses one unscaled continuous output; softmax temperature has no role.
     model.net.t.requires_grad_(False)
     optimizer = torch.optim.Adam([p for p in model.net.parameters() if p.requires_grad], lr=config['lr'])
@@ -191,6 +254,7 @@ def fit(frame, config, seed, validation=None, history=None):
             loss.backward()
             optimizer.step()
             model.clip()  # Only logical weights are clipped; the output stays unbounded.
+            project_fanin(model, config.get('max_fanin'))
         if (history is not None or config.get('stop_patience')) and ((epoch+1) % config.get('monitor_every',20) == 0 or epoch+1 == config['epochs']):
             if config.get('rule_head_alpha') is not None:
                 from models.rrl.abalone_refine import refit, predict_refit
@@ -201,6 +265,8 @@ def fit(frame, config, seed, validation=None, history=None):
                 train_prediction = predict(model, state, frame)
                 validation_prediction = predict(model, state, validation) if validation is not None else None
             record = dict(epoch=epoch+1, train_rmse=float(np.sqrt(np.mean((train_prediction-y)**2))))
+            if config.get('monitor_rules', False):
+                record.update(rule_diagnostics(model, X))
             if validation is not None:
                 record['validation_rmse'] = float(np.sqrt(np.mean((validation_prediction-validation.Rings.to_numpy())**2)))
             if history is not None:
@@ -218,6 +284,7 @@ def fit(frame, config, seed, validation=None, history=None):
     if best_weights is not None:
         model.net.load_state_dict(best_weights)
         state['epochs_run'] = epoch+1
+    project_fanin(model, config.get('max_fanin'))
     return model, state, args
 
 
